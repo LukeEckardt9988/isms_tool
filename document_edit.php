@@ -199,12 +199,13 @@ include 'header.php';
             <label for="review_date_for_doc">Nächstes Review-Datum (optional):</label>
             <input type="date" id="review_date_for_doc" name="review_date_for_doc" value="<?php echo he($review_date_val); ?>">
         </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-icon" aria-label="Speichern"><i class="fas fa-save"></i></button>
+            <a href="documents.php" class="btn btn-danger btn-icon" aria-label="Abbrechen"><i class="fas fa-times"></i></a>
+        </div>
     </fieldset>
 
-    <div class="form-actions">
-        <button type="submit" class="btn">Metadaten speichern</button>
-        <a href="document_details_view.php?id=<?php echo he($document_id); ?>" class="btn btn-secondary">Abbrechen</a>
-    </div>
+   
 </form>
 
 

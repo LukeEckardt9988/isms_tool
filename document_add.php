@@ -160,12 +160,15 @@ include 'header.php';
                 <?php endforeach; ?>
             </select>
         </div>
+
+         <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-icon" aria-label="Speichern"><i class="fas fa-save"></i></button>
+            <a href="documents.php" class="btn btn-danger btn-icon" aria-label="Abbrechen"><i class="fas fa-times"></i></a>
+        </div>
+
         </fieldset>
 
-    <div class="form-actions">
-        <button type="submit" class="btn">Dokument hochladen und speichern</button>
-        <a href="documents.php" class="btn btn-secondary">Abbrechen</a>
-    </div>
+ 
 </form>
 
 <?php include 'footer.php'; ?>

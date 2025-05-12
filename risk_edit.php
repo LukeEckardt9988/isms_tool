@@ -193,13 +193,13 @@ include 'header.php';
         <div class="form-group"><label for="risk_source">Risikoquelle:</label><textarea id="risk_source" name="risk_source" rows="3"><?php echo he($risk_source); ?></textarea></div>
         <div class="form-group"><label for="likelihood">Wahrscheinlichkeit:</label><select id="likelihood" name="likelihood"><?php foreach ($likelihood_options as $o): ?><option value="<?php echo he($o); ?>" <?php if ($likelihood == $o) echo ' selected'; ?>><?php echo he(ucfirst($o)); ?></option><?php endforeach; ?></select></div>
         <div class="form-group"><label for="impact">Auswirkung:</label><select id="impact" name="impact"><?php foreach ($impact_options as $o): ?><option value="<?php echo he($o); ?>" <?php if ($impact == $o) echo ' selected'; ?>><?php echo he(ucfirst($o)); ?></option><?php endforeach; ?></select></div>
-        <div class="form-group"><label>Berechnetes Level:</label><input type="text" value="<?php echo he(calculateRiskLevel($likelihood, $impact)); ?>" readonly style="background-color:#eee;"></div>
+        <div class="form-group"><label>Berechnetes Level:</label><input type="text" value="<?php echo he(calculateRiskLevel($likelihood, $impact)); ?>" readonly"></div>
         <div class="form-group"><label for="status">Status:</label><select id="status" name="status"><?php foreach ($status_options as $o): ?><option value="<?php echo he($o); ?>" <?php if ($status == $o) echo ' selected'; ?>><?php echo he(ucfirst($o)); ?></option><?php endforeach; ?></select></div>
     </fieldset>
 
     <fieldset>
         <legend>Betroffene Assets</legend>
-        <div class="form-group checkbox-list-container"> 
+        <div class="form-group checkbox-list-container">
             <p><small>Wählen Sie die Assets aus, die von diesem Risiko betroffen sind. Sie können hier auch "Alle Assets (Global)" auswählen.</small></p>
             <?php if (empty($all_assets_for_checkboxes)): ?>
                 <p>Keine Assets zur Auswahl vorhanden.</p>
@@ -228,7 +228,7 @@ include 'header.php';
 
     <fieldset>
         <legend>Zugeordnete Controls (Maßnahmen)</legend>
-        <div class="form-group checkbox-list-container"> 
+        <div class="form-group checkbox-list-container">
             <p><small>Wählen Sie die Controls aus, die zur Behandlung dieses Risikos beitragen.</small></p>
             <?php if (empty($all_controls_raw)): ?>
                 <p>Keine Controls zur Auswahl vorhanden.</p>
@@ -256,12 +256,13 @@ include 'header.php';
                 <option value="">--Wählen--</option><?php foreach ($users as $u): ?><option value="<?php echo he($u['id']); ?>" <?php if ($owner_id == $u['id']) echo ' selected'; ?>><?php echo he($u['username']); ?></option><?php endforeach; ?>
             </select></div>
         <div class="form-group"><label for="review_date">Nächstes Review:</label><input type="date" id="review_date" name="review_date" value="<?php echo he($review_date); ?>"></div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-icon" aria-label="Speichern"><i class="fas fa-save"></i></button>
+            <a href="risk_view.php" class="btn btn-danger btn-icon" aria-label="Abbrechen"><i class="fas fa-times"></i></a>
+        </div>
     </fieldset>
 
-    <div class="form-actions">
-        <button type="submit" class="btn">Änderungen speichern</button>
-        <a href="risk_view.php?id=<?php echo he($risk_id); ?>" class="btn btn-secondary">Abbrechen</a>
-    </div>
+
 </form>
 
 

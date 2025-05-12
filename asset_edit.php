@@ -238,12 +238,13 @@ include 'header.php';
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>
+         <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-icon" aria-label="Speichern"><i class="fas fa-save"></i></button>
+            <a href="asset_view.php" class="btn btn-danger btn-icon" aria-label="Abbrechen"><i class="fas fa-times"></i></a>
+        </div>
     </fieldset>
 
-    <div class="form-actions">
-        <button type="submit" class="btn">Änderungen speichern</button>
-        <a href="asset_view.php?id=<?php echo he($asset_id); ?>" class="btn btn-secondary">Abbrechen</a>
-    </div>
+
 </form>
 
 <?php include 'footer.php'; ?>

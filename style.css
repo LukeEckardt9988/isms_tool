@@ -1,7 +1,7 @@
 /* -------------------------------------------------------------------------- */
 /* 1.  Farbvariablen                                                          */
 /* -------------------------------------------------------------------------- */
-
+/*
 :root {
     --color-primary: #007bff;
     --color-primary-dark: #0056b3;
@@ -18,10 +18,62 @@
     --color-success-bg: #dff0d8;
     --color-error-border: red;
 }
-
+*/
+:root {
+    --color-primary: #4a90e2;       /* Etwas heller, aber kräftig */
+    --color-primary-dark: #3575c1;  /* Dunklerer Ton für Hover/Akzente */
+    --color-danger: #d9534f;        /* Etwas kräftigeres Rot */
+    --color-success: #5cb85c;       /* Standard-Grün beibehalten, passt oft gut */
+    --color-bg: #22272e;           /* Dunkelgrau für Haupt-Hintergrund */
+    --color-text: #e0e0e0;          /* Hellgrau für Text (guter Kontrast auf Dunkel) */
+    --color-text-light: #999;       /* Noch heller für sekundären Text */
+    --color-border: #555;           /* Dunklerer Rahmen */
+    --color-border-light: #444;       /* Noch dunklerer Rahmen */
+    --color-bg-light: #333943;      /* Etwas helleres Dunkelgrau für Widgets */
+    --color-white: #f8f8f8;          /* Fast Weiß, für Kontrast */
+    --color-error-bg: #f2dede;      /* Gedämpftes Rot für Fehler-Hintergrund */
+    --color-success-bg: #dff0d8;     /* Standard-Grün beibehalten */
+    --color-error-border: #a94442;  /* Dunklerer Rot-Rahmen für Fehler */
+}
 /* -------------------------------------------------------------------------- */
 /* 2.  Grundlegende Stile                                                     */
 /* -------------------------------------------------------------------------- */
+.form-group input[type="text"],
+.form-group input[type="date"],
+.form-group input[type="file"],
+.form-group input[type="password"],
+.form-group input[type="email"],
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    /* background-color: var(--color-bg-light);  // Aktuell */
+    background-color: #444952;  /* Hellerer Farbton */
+    color: var(--color-text);     /* Beibehalten oder anpassen */
+}
+
+.form-group input[readonly],
+.form-group textarea[readonly] {
+    /* background-color: var(--color-bg-light); // Aktuell */
+    background-color: #555A63; /* Noch heller für Readonly */
+    cursor: not-allowed;
+}
+.form-group .checkbox-list-container {
+    background-color: #444952; /* Dunklerer Hintergrund */
+    color: var(--color-text);   /* Helle Textfarbe für Labels */
+    /* Weitere Stile nach Bedarf */
+    border: 1px solid var(--color-border); /* Rahmen wie bisher */
+}
+
+
+.checkbox-list-container {
+    background-color: #444952 !important; /* Wichtig für Tests */
+    color: white !important;
+}
+
 
 body {
     font-family: sans-serif;
@@ -48,26 +100,97 @@ a:hover {
 /* -------------------------------------------------------------------------- */
 
 header {
-    background-color: #333;
+    background-color: #000000;
+    background-image: url('header.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
     color: var(--color-white);
     padding: 1em;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: #333 0px 0px 15px;
 }
 
 header h1 a {
     color: var(--color-white);
 }
 
+nav {
+    display: flex;
+    /* Macht die Navigationslinks horizontal */
+}
+
 nav a {
     color: var(--color-white);
     margin-left: 1em;
+    display: flex;
+    /* Macht den Link zum Flex-Container */
+    flex-direction: column;
+    /* Icons über dem Text */
+    align-items: center;
+    /* Horizontale Zentrierung */
+    text-align: center;
+    /* Zentriert den Text */
+    gap: 0.3em;
+    /* Abstand zwischen Icon und Text */
+    height: 60px;
 }
 
 nav a:hover {
-    text-decoration: underline;
+    font-size: 17px;
+    transition: font-size 0.3s ease;
+    text-decoration: none;
+    text-shadow: #000 0px 0px 15px;
+    /* Textschatten für Hover-Effekt */
 }
+
+nav a i {
+    font-size: 2em;
+    transition: color 0.3s ease;
+}
+
+nav a:hover i {
+    font-size: 2.1em;
+}
+
+nav a[aria-label="Dashboard"]:hover i {
+    color: var(--color-primary-dark);
+    /* Dunkleres Blau */
+}
+
+nav a[aria-label="Assets"]:hover i {
+    color: #FFD700;
+    /* Gold für Geld/Assets */
+}
+
+nav a[aria-label="Risiken"]:hover i {
+    color: var(--color-danger);
+    /* Rot für Risiken */
+}
+
+nav a[aria-label="Controls"]:hover i {
+    color: #008000;
+    /* Dunkles Grün für Kontrolle/Sicherheit */
+}
+
+nav a[aria-label="Dokumente"]:hover i {
+    color: #004381;
+    /* Lila für Dokumente (neutral, aber edel) */
+}
+
+nav a[aria-label="Benutzer"]:hover i {
+    color: #FFA500;
+    /* Orange für Benutzer (auffällig, aber nicht negativ) */
+}
+
+nav a[aria-label^="Logout"]:hover i {
+    /* ^ Selektor für "beginnt mit" */
+    color: #A9A9A9;
+    /* Dunkles Grau für Logout */
+}
+
 
 main {
     padding: 1em;
@@ -75,10 +198,15 @@ main {
 }
 
 footer {
-    background-color: var(--color-bg-light);
+    background-color: var(--color-bg-light); /* Fallback-Farbe */
+    background-image: url('header.jpg'); /* Pfad zum Bild (wie im Header) */
+    background-size: cover; /* Wie im Header */
+    background-repeat: no-repeat; /* Wie im Header */
+    background-position: bottom; /* Wie im Header */
     text-align: center;
     padding: 1em;
     margin-top: auto;
+    color: var(--color-white);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -177,7 +305,8 @@ th {
     cursor: pointer;
     text-decoration: none;
     display: inline-block;
-    border-radius: 4px; /* Einheitlicher Radius für Buttons */
+    border-radius: 4px;
+    /* Einheitlicher Radius für Buttons */
 }
 
 .btn:hover {
@@ -189,7 +318,8 @@ th {
 }
 
 .btn-danger:hover {
-    background-color: darken(var(--color-danger), 10%); /* Dunkler beim Hover */
+    background-color: darken(var(--color-danger), 10%);
+    /* Dunkler beim Hover */
 }
 
 .btn-add {
@@ -201,6 +331,54 @@ th {
     background-color: var(--color-bg-light);
     border-color: var(--color-border-light);
     cursor: not-allowed;
+}
+
+/* -------------------------------------------------------------------------- */
+
+
+.btn-icon {
+    width: 2.5em;
+    height: 2.5em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.btn-icon i {
+    font-size: 1.2em;
+    /* Größe der Icons */
+}
+
+.btn-danger {
+    background-color: var(--color-danger);
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    width: 3em;
+    height: 3em;
+}
+
+/* -------------------------------------------------------------------------- */
+
+
+
+.btn-secondary {
+    /* Falls Sie .btn-secondary später auch für <button> nutzen wollen */
+    padding: 7px 12px;
+    color: var(--color-white);
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.btn-secondary:hover {
+    background-color: #545b62;
+    /* Dunklerer Grauton beim Hover */
 }
 
 /* -------------------------------------------------------------------------- */
@@ -281,12 +459,15 @@ th {
     padding-bottom: 15px;
     border-bottom: 1px solid var(--color-border-light);
     display: flex;
-    flex-wrap: wrap; /* Mehrzeiliger Umbruch für Buttons */
-    gap: 10px; /* Abstand zwischen Buttons */
+    flex-wrap: wrap;
+    /* Mehrzeiliger Umbruch für Buttons */
+    gap: 10px;
+    /* Abstand zwischen Buttons */
 }
 
 .document-actions .btn {
-    margin-right: 0; /* Entferne unnötigen Abstand */
+    margin-right: 0;
+    /* Entferne unnötigen Abstand */
     margin-bottom: 5px;
 }
 

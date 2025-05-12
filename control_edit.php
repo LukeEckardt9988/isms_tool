@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $effectiveness_post = $_POST['effectiveness'] ?? '';
     $effectiveness = in_array($effectiveness_post, $effectiveness_options) ? $effectiveness_post : $control['effectiveness'];
-    
+
     $effectiveness_review_notes = trim($_POST['effectiveness_review_notes'] ?? '');
 
     $last_review_date_input = trim($_POST['last_review_date'] ?? '');
@@ -85,14 +85,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $next_review_date_input = trim($_POST['next_review_date'] ?? '');
     $next_review_date = !empty($next_review_date_input) ? date('Y-m-d', strtotime($next_review_date_input)) : null;
-    
+
     $linked_policy_document_id = !empty($_POST['linked_policy_document_id']) ? (int)$_POST['linked_policy_document_id'] : null;
     $notes = trim($_POST['notes'] ?? '');
 
     // Validierung (Beispiel)
     // if (empty($name)) { $errors[] = 'Der Name des Controls ist erforderlich.'; }
-    if (!empty($last_review_date_input) && !$last_review_date) { $errors[] = 'Letztes Review-Datum hat ein ungültiges Format.';}
-    if (!empty($next_review_date_input) && !$next_review_date) { $errors[] = 'Nächstes Review-Datum hat ein ungültiges Format.';}
+    if (!empty($last_review_date_input) && !$last_review_date) {
+        $errors[] = 'Letztes Review-Datum hat ein ungültiges Format.';
+    }
+    if (!empty($next_review_date_input) && !$next_review_date) {
+        $errors[] = 'Nächstes Review-Datum hat ein ungültiges Format.';
+    }
 
 
     if (empty($errors)) {
@@ -107,11 +111,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     WHERE id = ?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
-                $control_type, $implementation_status, $status_description, $justification_applicability,
-                $priority, $owner_id, $responsible_department,
-                $effectiveness, $effectiveness_review_notes,
-                $last_review_date, $next_review_date,
-                $linked_policy_document_id, $notes,
+                $control_type,
+                $implementation_status,
+                $status_description,
+                $justification_applicability,
+                $priority,
+                $owner_id,
+                $responsible_department,
+                $effectiveness,
+                $effectiveness_review_notes,
+                $last_review_date,
+                $next_review_date,
+                $linked_policy_document_id,
+                $notes,
                 $control_db_id
             ]);
             log_audit_trail('UPDATE_CONTROL', 'Control', $control_db_id, ['control_id_iso' => $control_id_iso, 'status' => $implementation_status]);
@@ -184,7 +196,7 @@ include 'header.php';
             <label for="status_description">Statusbeschreibung / Begründung (z.B. für "nicht relevant"):</label>
             <textarea id="status_description" name="status_description" rows="3"><?php echo he($status_description); ?></textarea>
         </div>
-         <div class="form-group">
+        <div class="form-group">
             <label for="justification_applicability">Begründung der Anwendbarkeit (SoA):</label>
             <textarea id="justification_applicability" name="justification_applicability" rows="3"><?php echo he($justification_applicability); ?></textarea>
         </div>
@@ -246,12 +258,14 @@ include 'header.php';
             <label for="notes">Allgemeine Notizen:</label>
             <textarea id="notes" name="notes" rows="3"><?php echo he($notes); ?></textarea>
         </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-icon" aria-label="Speichern"><i class="fas fa-save"></i></button>
+            <a href="control_view.php?id=<?php echo he($control_db_id); ?>" class="btn btn-danger btn-icon" aria-label="Abbrechen"><i class="fas fa-times"></i></a>
+        </div>
     </fieldset>
 
-    <div class="form-actions">
-        <button type="submit" class="btn">Änderungen speichern</button>
-        <a href="control_view.php?id=<?php echo he($control_db_id); ?>" class="btn btn-secondary">Abbrechen</a>
-    </div>
+
 </form>
 
 

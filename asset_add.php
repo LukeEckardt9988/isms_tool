@@ -96,12 +96,14 @@ include 'header.php';
             <?php endforeach; ?>
         </select>
     </div>
-     <div class="form-group">
+    <div class="form-group">
         <label for="location">Standort/Ablageort:</label>
         <input type="text" id="location" name="location" value="<?php echo he($location); ?>">
     </div>
-    <button type="submit" class="btn">Asset speichern</button>
-    <a href="assets.php" class="btn" style="background-color: grey;">Abbrechen</a>
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn-icon" aria-label="Speichern"><i class="fas fa-save"></i></button>
+        <a href="assets.php" class="btn btn-danger btn-icon" aria-label="Abbrechen"><i class="fas fa-times"></i></a>
+    </div>
 </form>
 
 <?php include 'footer.php'; ?>
