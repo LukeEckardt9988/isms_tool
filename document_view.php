@@ -104,49 +104,5 @@ include 'header.php';
 
 </div>
 
-<style>
-    .document-view-container {
-        padding: 15px;
-    }
-
-    .document-actions {
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        border-bottom: 1px solid #eee;
-    }
-
-    .document-actions .btn {
-        margin-right: 10px;
-        margin-bottom: 5px;
-    }
-
-    .document-metadata,
-    .document-preview {
-        border: 1px solid #ddd;
-        padding: 15px;
-        margin-bottom: 20px;
-        border-radius: 4px;
-        background-color: #fdfdfd;
-    }
-
-    .document-metadata legend,
-    .document-preview legend {
-        font-weight: bold;
-        color: #337ab7;
-        padding: 0 5px;
-        font-size: 1.1em;
-    }
-
-    .document-metadata p {
-        margin: 5px 0 10px;
-    }
-
-    .btn-disabled {
-        color: #aaa;
-        background-color: #eee;
-        border-color: #ddd;
-        cursor: not-allowed;
-    }
-</style>
 
 <?php include 'footer.php'; ?>

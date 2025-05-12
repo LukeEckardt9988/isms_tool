@@ -141,50 +141,5 @@ function getSortArrow($column_name, $current_sort_column, $current_sort_directio
         </tbody>
     </table>
 </div>
-<style>
-    .table-container {
-        width: 100%;
-        overflow-x: auto;
-        margin-top: 15px;
-    }
 
-    table {
-        width: 100%;
-    }
-
-    th a {
-        text-decoration: none;
-        color: inherit;
-    }
-
-    th a:hover {
-        text-decoration: underline;
-    }
-
-    td[title] {
-        cursor: help;
-    }
-
-    .search-form {
-        margin-bottom: 20px;
-    }
-
-    .search-form .form-group {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-    }
-
-    .search-form input[type="text"] {
-        flex-grow: 1;
-    }
-
-    .error {
-        color: red;
-        background-color: #ffe0e0;
-        border: 1px solid red;
-        padding: 10px;
-        margin-bottom: 15px;
-    }
-</style>
 <?php include 'footer.php'; ?>

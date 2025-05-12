@@ -1,23 +1,391 @@
-body { font-family: sans-serif; margin: 0; display: flex; flex-direction: column; min-height: 100vh; }
-header { background-color: #333; color: white; padding: 1em; }
-header h1 a { color: white; text-decoration: none; }
-nav { float: right; }
-nav a { color: white; margin-left: 1em; text-decoration: none; }
-nav a:hover { text-decoration: underline; }
-main { padding: 1em; flex-grow: 1;}
-footer { background-color: #f0f0f0; text-align: center; padding: 1em; margin-top: auto; }
-table { width: 100%; border-collapse: collapse; margin-bottom: 1em; }
-th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-th { background-color: #f2f2f2; }
-.form-group { margin-bottom: 1em; }
-.form-group label { display: block; margin-bottom: .2em; }
+/* -------------------------------------------------------------------------- */
+/* 1.  Farbvariablen                                                          */
+/* -------------------------------------------------------------------------- */
+
+:root {
+    --color-primary: #007bff;
+    --color-primary-dark: #0056b3;
+    --color-danger: #dc3545;
+    --color-success: #3c763d;
+    --color-bg: #f8f8f8;
+    --color-text: #333;
+    --color-text-light: #666;
+    --color-border: #ccc;
+    --color-border-light: #ddd;
+    --color-bg-light: #f2f2f2;
+    --color-white: #fff;
+    --color-error-bg: #ffe0e0;
+    --color-success-bg: #dff0d8;
+    --color-error-border: red;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 2.  Grundlegende Stile                                                     */
+/* -------------------------------------------------------------------------- */
+
+body {
+    font-family: sans-serif;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    line-height: 1.6;
+}
+
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 3.  Layout                                                                */
+/* -------------------------------------------------------------------------- */
+
+header {
+    background-color: #333;
+    color: var(--color-white);
+    padding: 1em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 a {
+    color: var(--color-white);
+}
+
+nav a {
+    color: var(--color-white);
+    margin-left: 1em;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
+
+main {
+    padding: 1em;
+    flex-grow: 1;
+}
+
+footer {
+    background-color: var(--color-bg-light);
+    text-align: center;
+    padding: 1em;
+    margin-top: auto;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 4.  Tabellen                                                              */
+/* -------------------------------------------------------------------------- */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1em;
+}
+
+th,
+td {
+    border: 1px solid var(--color-border-light);
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: var(--color-bg-light);
+}
+
+/* -------------------------------------------------------------------------- */
+/* 5.  Formulare                                                             */
+/* -------------------------------------------------------------------------- */
+
+.edit-form fieldset {
+    border: 1px solid var(--color-border);
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+
+.edit-form legend {
+    font-weight: bold;
+    color: var(--color-primary);
+    padding: 0 5px;
+    font-size: 1.1em;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: .3rem;
+    font-weight: bold;
+}
+
 .form-group input[type="text"],
+.form-group input[type="date"],
+.form-group input[type="file"],
 .form-group input[type="password"],
 .form-group input[type="email"],
 .form-group textarea,
-.form-group select { width: 100%; padding: 8px; box-sizing: border-box; }
-.btn { padding: 10px 15px; background-color: #007bff; color: white; border: none; cursor: pointer; text-decoration: none; display: inline-block; }
-.btn-danger { background-color: #dc3545; }
-.btn-add { margin-bottom: 1em; }
-.error { color: red; margin-bottom: 1em; }
-.success { color: green; margin-bottom: 1em; }
+.form-group select {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+}
+
+.form-group input[readonly],
+.form-group textarea[readonly] {
+    background-color: var(--color-bg-light);
+    cursor: not-allowed;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.85em;
+    color: var(--color-text-light);
+}
+
+.form-actions {
+    margin-top: 20px;
+}
+
+.required {
+    color: red;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 6.  Buttons                                                              */
+/* -------------------------------------------------------------------------- */
+
+.btn {
+    padding: 10px 15px;
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    border-radius: 4px; /* Einheitlicher Radius für Buttons */
+}
+
+.btn:hover {
+    background-color: var(--color-primary-dark);
+}
+
+.btn-danger {
+    background-color: var(--color-danger);
+}
+
+.btn-danger:hover {
+    background-color: darken(var(--color-danger), 10%); /* Dunkler beim Hover */
+}
+
+.btn-add {
+    margin-bottom: 1em;
+}
+
+.btn-disabled {
+    color: var(--color-text-light);
+    background-color: var(--color-bg-light);
+    border-color: var(--color-border-light);
+    cursor: not-allowed;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 7.  Checkbox-Listen                                                        */
+/* -------------------------------------------------------------------------- */
+
+.checkbox-list-container {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--color-border-light);
+    padding: 10px;
+    border-radius: 4px;
+    background-color: var(--color-white);
+}
+
+.checkbox-list-container .control-category {
+    margin-bottom: 10px;
+}
+
+.checkbox-list-container .control-category h4 {
+    margin-top: 0;
+    margin-bottom: 5px;
+    font-size: 0.95em;
+    color: #444;
+    padding-bottom: 3px;
+    border-bottom: 1px dotted var(--color-border-light);
+}
+
+.checkbox-list-container .checkbox-item {
+    display: block;
+    margin-bottom: 3px;
+    font-weight: normal;
+    font-size: 0.9em;
+}
+
+.checkbox-list-container .checkbox-item input[type="checkbox"] {
+    margin-right: 7px;
+    vertical-align: middle;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 8.  Flash-Nachrichten                                                       */
+/* -------------------------------------------------------------------------- */
+
+.success {
+    color: var(--color-success);
+    background-color: var(--color-success-bg);
+    border: 1px solid var(--color-success);
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.error {
+    color: var(--color-danger);
+    background-color: var(--color-error-bg);
+    border: 1px solid var(--color-error-border);
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.error ul {
+    margin-bottom: 0;
+    padding-left: 20px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 9.  Dokumentenansicht                                                     */
+/* -------------------------------------------------------------------------- */
+
+.document-view-container {
+    padding: 15px;
+}
+
+.document-actions {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--color-border-light);
+    display: flex;
+    flex-wrap: wrap; /* Mehrzeiliger Umbruch für Buttons */
+    gap: 10px; /* Abstand zwischen Buttons */
+}
+
+.document-actions .btn {
+    margin-right: 0; /* Entferne unnötigen Abstand */
+    margin-bottom: 5px;
+}
+
+.document-metadata,
+.document-preview {
+    border: 1px solid var(--color-border-light);
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    background-color: var(--color-white);
+}
+
+.document-metadata legend,
+.document-preview legend {
+    font-weight: bold;
+    color: var(--color-primary);
+    padding: 0 5px;
+    font-size: 1.1em;
+}
+
+.document-metadata p {
+    margin: 5px 0 10px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 10. Dashboard                                                            */
+/* -------------------------------------------------------------------------- */
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    padding-bottom: 20px;
+}
+
+.widget {
+    border: 1px solid var(--color-border);
+    padding: 15px;
+    border-radius: 5px;
+    background-color: var(--color-bg-light);
+    display: flex;
+    flex-direction: column;
+}
+
+.widget h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--color-primary);
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.widget p {
+    margin-bottom: 8px;
+    flex-shrink: 0;
+}
+
+.chart-container {
+    position: relative;
+    height: 280px;
+    width: 100%;
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+#controlStatusChart,
+#riskLevelRadarChart {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 11. Tabellen-Container                                                    */
+/* -------------------------------------------------------------------------- */
+
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 15px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 12. Suchformular                                                          */
+/* -------------------------------------------------------------------------- */
+
+.search-form {
+    margin-bottom: 20px;
+}
+
+.search-form .form-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.search-form input[type="text"] {
+    flex-grow: 1;
+}

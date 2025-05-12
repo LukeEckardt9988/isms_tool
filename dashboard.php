@@ -77,58 +77,7 @@ include 'header.php';
         </div>
     </div>
 </div>
-<style>
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        gap: 20px;
-        padding-bottom: 20px;
-        /* Etwas Platz am Ende der Seite */
-    }
 
-    .widget {
-        border: 1px solid #ccc;
-        padding: 15px;
-        border-radius: 5px;
-        background-color: #f9f9f9;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .widget h3 {
-        margin-top: 0;
-        margin-bottom: 15px;
-        color: #337ab7;
-        text-align: center;
-        flex-shrink: 0;
-    }
-
-    .widget p {
-        margin-bottom: 8px;
-        flex-shrink: 0;
-    }
-
-    /* Wrapper für Canvas, um die Höhe und das responsive Verhalten besser zu kontrollieren */
-    .chart-container {
-        position: relative;
-        height: 280px;
-        /* Höhe für den Diagramm-Bereich, ggf. anpassen */
-        width: 100%;
-        flex-grow: 1;
-        /* Dieser Container füllt den verfügbaren vertikalen Platz im .widget */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-bottom: 10px;
-    }
-
-    #controlStatusChart,
-    #riskLevelRadarChart {
-        display: block;
-        max-width: 100%;
-        max-height: 100%;
-    }
-</style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>

@@ -254,26 +254,5 @@ include 'header.php';
     </div>
 </form>
 
-<style>
-    .edit-form fieldset {
-        border: 1px solid #ccc;
-        padding: 15px;
-        margin-bottom: 20px;
-        border-radius: 4px;
-    }
-    .edit-form legend {
-        font-weight: bold;
-        color: #337ab7;
-        padding: 0 5px;
-    }
-    .form-group.readonly input,
-    .form-group.readonly textarea {
-        background-color: #eee;
-        cursor: not-allowed;
-    }
-    .form-actions {
-        margin-top: 20px;
-    }
-</style>
 
 <?php include 'footer.php'; ?>

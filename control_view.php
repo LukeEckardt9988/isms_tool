@@ -131,8 +131,6 @@ include 'header.php';
     </fieldset>
 </div>
 
-<style>
-    /* ... (siehe Styles von asset_view.php) ... */
-</style>
+
 
 <?php include 'footer.php'; ?>

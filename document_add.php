@@ -167,17 +167,5 @@ include 'header.php';
         <a href="documents.php" class="btn btn-secondary">Abbrechen</a>
     </div>
 </form>
-<style> /* Ggf. in Ihre Haupt-style.css auslagern */
-    .required { color: red; }
-    .edit-form fieldset { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 4px; }
-    .edit-form legend { font-weight: bold; color: #337ab7; padding: 0 5px; }
-    .form-group { margin-bottom: 1rem; }
-    .form-group label { display: block; margin-bottom: .3rem; font-weight: bold; }
-    .form-group input[type="text"], .form-group input[type="file"], .form-group textarea, .form-group select {
-        width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;
-    }
-    .form-group small { display: block; margin-top: 4px; font-size: 0.85em; color: #666; }
-    .form-actions { margin-top: 20px; }
-    .success { color: #3c763d; background-color: #dff0d8; border: 1px solid #d6e9c6; padding: 10px; border-radius: 4px; margin-bottom: 15px;}
-</style>
+
 <?php include 'footer.php'; ?>

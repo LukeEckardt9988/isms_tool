@@ -112,53 +112,6 @@ include 'header.php';
     </fieldset>
 </div>
 
-<style>
-    .details-container {
-        padding: 15px;
-    }
 
-    .actions-bar {
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        border-bottom: 1px solid #eee;
-    }
-
-    .actions-bar .btn {
-        margin-right: 10px;
-    }
-
-    .metadata-section,
-    .linked-items-section {
-        border: 1px solid #ddd;
-        padding: 15px;
-        margin-bottom: 20px;
-        border-radius: 4px;
-        background-color: #fdfdfd;
-    }
-
-    .metadata-section legend,
-    .linked-items-section legend {
-        font-weight: bold;
-        color: #337ab7;
-        padding: 0 5px;
-        font-size: 1.1em;
-    }
-
-    .metadata-section p {
-        margin: 5px 0 10px;
-    }
-
-    .linked-list {
-        list-style: disc;
-        margin-left: 20px;
-        padding-left: 0;
-    }
-
-    .linked-list li {
-        margin-bottom: 5px;
-    }
-
-    /* Styles für Flash Messages (success, error) sollten global in style.css sein */
-</style>
 
 <?php include 'footer.php'; ?>
