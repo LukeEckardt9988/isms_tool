@@ -1,158 +1,123 @@
 <?php
-
 require_once 'functions.php';
 requireLogin();
 
-
 $risk_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
-
-
 if (!$risk_id) {
-    header('Location: risks.php?status=error_invalid_id');
+    $_SESSION['flash_error'] = "Ungültige Risiko-ID.";
+    header('Location: risks.php');
     exit;
 }
 
 $pdo = getPDO();
 
-// Risikodaten abrufen, inklusive Name des Eigners
-$sql = "
+// Risikodaten laden (Ihre bisherige Abfrage)
+$stmt_risk = $pdo->prepare("
     SELECT r.*, u.username as owner_name
     FROM risks r
     LEFT JOIN users u ON r.owner_id = u.id
     WHERE r.id = ?
-";
+");
+$stmt_risk->execute([$risk_id]);
+$risk = $stmt_risk->fetch();
 
-$stmt = $pdo->prepare($sql);
+if (!$risk) {
+    $_SESSION['flash_error'] = "Risiko nicht gefunden.";
+    header('Location: risks.php');
+    exit;
+}
 
-$stmt->execute([$risk_id]);
+// NEU: Verknüpfte Assets für dieses Risiko laden
+$stmt_linked_assets = $pdo->prepare("
+    SELECT a.id, a.name, a.inventory_id_extern
+    FROM assets a
+    JOIN asset_risks ar ON a.id = ar.asset_id
+    WHERE ar.risk_id = ?
+    ORDER BY a.name ASC
+");
+$stmt_linked_assets->execute([$risk_id]);
+$linked_assets = $stmt_linked_assets->fetchAll();
 
-$risk = $stmt->fetch();
+// NEU: Verknüpfte Controls für dieses Risiko laden
+$stmt_linked_controls_risk = $pdo->prepare("
+    SELECT c.id, c.control_id_iso, c.name
+    FROM controls c
+    JOIN risk_controls rc ON c.id = rc.control_id
+    WHERE rc.risk_id = ?
+    ORDER BY c.control_id_iso ASC
+");
+$stmt_linked_controls_risk->execute([$risk_id]);
+$linked_controls_for_risk = $stmt_linked_controls_risk->fetchAll();
 
-// Originalcode ab hier (ggf. die var_dumps oben entfernen, wenn Problem gefunden)
+
+$page_title = "Risiko Details: " . he($risk['name']);
 include 'header.php';
 ?>
 
-<h2>Risiko Details: <?php echo he($risk['name']); ?></h2>
+<h2><?php echo $page_title; ?></h2>
+<?php display_flash_messages(); ?>
 
-<div class="risk-details-container">
-    <div class="detail-item">
-        <span class="detail-label">ID:</span>
-        <span class="detail-value"><?php echo he($risk['id']); ?></span>
+<div class="details-container">
+    <div class="actions-bar">
+        <a href="risks.php" class="btn btn-secondary">&laquo; Zurück zur Risiko-Liste</a>
+        <a href="risk_edit.php?id=<?php echo he($risk['id']); ?>" class="btn">Risiko & Verknüpfungen bearbeiten</a>
     </div>
-    <div class="detail-item">
-        <span class="detail-label">Name:</span>
-        <span class="detail-value"><?php echo he($risk['name']); ?></span>
-    </div>
-    <div class="detail-item">
-        <span class="detail-label">Beschreibung:</span>
-        <span class="detail-value"><?php echo nl2br(he($risk['description'] ?? 'N/A')); ?></span>
-    </div>
-    <div class="detail-item">
-        <span class="detail-label">Risikoquelle:</span>
-        <span class="detail-value"><?php echo nl2br(he($risk['risk_source'] ?? 'N/A')); ?></span>
-    </div>
-    <div class="detail-item">
-        <span class="detail-label">Eintrittswahrscheinlichkeit:</span>
-        <span class="detail-value"><?php echo he(ucfirst($risk['likelihood'] ?? 'N/A')); ?></span>
-    </div>
-    <div class="detail-item">
-        <span class="detail-label">Auswirkung:</span>
-        <span class="detail-value"><?php echo he(ucfirst($risk['impact'] ?? 'N/A')); ?></span>
-    </div>
-    <div class="detail-item">
-        <span class="detail-label">Risikolevel:</span>
-        <span class="detail-value"><?php echo he($risk['risk_level'] ?? 'Nicht bewertet'); ?></span>
-    </div>
-    <div class="detail-item">
-        <span class="detail-label">Status:</span>
-        <span class="detail-value"><?php echo he(ucfirst($risk['status'] ?? 'N/A')); ?></span>
-    </div>
-    <div class="detail-item">
-        <span class="detail-label">Behandlungsoption:</span>
-        <span class="detail-value"><?php echo he($risk['treatment_option'] ? ucfirst($risk['treatment_option']) : 'N/A'); ?></span>
-    </div>
-    <div class="detail-item">
-        <span class="detail-label">Behandlungsplan:</span>
-        <span class="detail-value"><?php echo nl2br(he($risk['treatment_plan'] ?? 'N/A')); ?></span>
-    </div>
-    <div class="detail-item">
-        <span class="detail-label">Risikoeigner:</span>
-        <span class="detail-value"><?php echo he($risk['owner_name'] ?? 'Nicht zugewiesen'); ?></span>
-    </div>
-    <div class="detail-item">
-        <span class="detail-label">Nächstes Review am:</span>
-        <span class="detail-value"><?php echo $risk['review_date'] ? he(date('d.m.Y', strtotime($risk['review_date']))) : 'N/A'; ?></span>
-    </div>
-    <div class="detail-item">
-        <span class="detail-label">Erstellt am:</span>
-        <span class="detail-value"><?php echo he(date('d.m.Y H:i:s', strtotime($risk['created_at']))); ?></span>
-    </div>
-    <div class="detail-item">
-        <span class="detail-label">Letzte Änderung:</span>
-        <span class="detail-value"><?php echo he(date('d.m.Y H:i:s', strtotime($risk['updated_at']))); ?></span>
-    </div>
+
+    <fieldset class="metadata-section">
+        <legend>Risikoinformationen</legend>
+        <p><strong>ID:</strong> <?php echo he($risk['id']); ?></p>
+        <p><strong>Name:</strong> <?php echo he($risk['name']); ?></p>
+        <p><strong>Beschreibung:</strong> <?php echo nl2br(he($risk['description'] ?? 'N/A')); ?></p>
+        <p><strong>Risikoquelle:</strong> <?php echo nl2br(he($risk['risk_source'] ?? 'N/A')); ?></p>
+        <p><strong>Eintrittswahrscheinlichkeit:</strong> <?php echo he(ucfirst($risk['likelihood'] ?? 'N/A')); ?></p>
+        <p><strong>Auswirkung:</strong> <?php echo he(ucfirst($risk['impact'] ?? 'N/A')); ?></p>
+        <p><strong>Risikolevel:</strong> <?php echo he($risk['risk_level'] ?? 'Nicht bewertet'); ?></p>
+        <p><strong>Status:</strong> <?php echo he(ucfirst($risk['status'] ?? 'N/A')); ?></p>
+        <p><strong>Behandlungsoption:</strong> <?php echo he($risk['treatment_option'] ? ucfirst($risk['treatment_option']) : 'N/A'); ?></p>
+        <p><strong>Behandlungsplan:</strong> <?php echo nl2br(he($risk['treatment_plan'] ?? 'N/A')); ?></p>
+        <p><strong>Risikoeigner:</strong> <?php echo he($risk['owner_name'] ?? 'Nicht zugewiesen'); ?></p>
+        <p><strong>Nächstes Review am:</strong> <?php echo $risk['review_date'] ? he(date('d.m.Y', strtotime($risk['review_date']))) : 'N/A'; ?></p>
+        <p><strong>Erstellt am:</strong> <?php echo he(date('d.m.Y H:i', strtotime($risk['created_at']))); ?></p>
+        <p><strong>Letzte Änderung:</strong> <?php echo he(date('d.m.Y H:i', strtotime($risk['updated_at']))); ?></p>
+    </fieldset>
+
+    <fieldset class="linked-items-section">
+        <legend>Betroffene Assets</legend>
+        <?php if (!empty($linked_assets)): ?>
+            <ul class="linked-list">
+                <?php foreach ($linked_assets as $asset_item): ?>
+                    <li>
+                        <a href="asset_view.php?id=<?php echo he($asset_item['id']); ?>">
+                            <?php echo he($asset_item['name']); ?> (Ext.ID: <?php echo he($asset_item['inventory_id_extern'] ?? 'N/A'); ?>)
+                        </a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <p>Dieses Risiko ist keinen spezifischen Assets direkt zugeordnet.</p>
+        <?php endif; ?>
+    </fieldset>
+
+    <fieldset class="linked-items-section">
+        <legend>Zugeordnete Controls (Behandlungsmaßnahmen)</legend>
+        <?php if (!empty($linked_controls_for_risk)): ?>
+            <ul class="linked-list">
+                <?php foreach ($linked_controls_for_risk as $control_item): ?>
+                    <li>
+                        <a href="control_view.php?id=<?php echo he($control_item['id']); ?>">
+                            <?php echo he($control_item['control_id_iso']); ?> - <?php echo he($control_item['name']); ?>
+                        </a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <p>Für dieses Risiko sind keine Controls als Behandlungsmaßnahmen direkt verknüpft.</p>
+        <?php endif; ?>
+    </fieldset>
 </div>
 
-<div class="actions-bar">
-    <a href="risk_edit.php?id=<?php echo he($risk['id']); ?>" class="btn">Risiko bearbeiten</a>
-    <a href="risks.php" class="btn btn-secondary">Zurück zur Risiko-Liste</a>
-</div>
-
-<div class="linked-items">
-    <h3>Verknüpfte Assets</h3>
-    <p><em>Funktionalität wird später implementiert.</em></p>
-</div>
-<div class="linked-items">
-    <h3>Verknüpfte Controls (Maßnahmen)</h3>
-    <p><em>Funktionalität wird später implementiert.</em></p>
-</div>
-
-<style> /* Sie können diese Stile in Ihre style.css auslagern, wenn sie mehrfach verwendet werden */
-    .risk-details-container { /* Ähnlich wie asset-details-container */
-        background-color: #f9f9f9;
-        border: 1px solid #eee;
-        padding: 20px;
-        border-radius: 5px;
-        margin-bottom: 20px;
-    }
-    .detail-item {
-        margin-bottom: 10px;
-        padding-bottom: 10px;
-        border-bottom: 1px dotted #ddd;
-    }
-    .detail-item:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
-        padding-bottom: 0;
-    }
-    .detail-label {
-        font-weight: bold;
-        color: #333;
-        display: inline-block;
-        width: 200px;
-        vertical-align: top;
-    }
-    .detail-value {
-        color: #555;
-        display: inline-block;
-        max-width: calc(100% - 220px);
-        vertical-align: top;
-    }
-    .actions-bar {
-        margin-top: 20px;
-        margin-bottom: 30px;
-    }
-    .actions-bar .btn {
-        margin-right: 10px;
-    }
-    .btn-secondary {
-        background-color: #6c757d;
-    }
-    .linked-items {
-        margin-top: 30px;
-        padding-top: 20px;
-        border-top: 1px solid #ccc;
-    }
+<style>
+    /* ... (siehe Styles von asset_view.php) ... */
 </style>
 
 <?php include 'footer.php'; ?>

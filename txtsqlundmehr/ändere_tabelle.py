@@ -1,197 +1,208 @@
+import re
 import os
 
 # --- KONFIGURATION ---
-INPUT_SQL_DUMP_FILE = os.path.join( 'assets.sql')
+# Annahme: 'assets.sql' (Ihr Dump) liegt im selben Verzeichnis wie dieses Skript
+script_dir = os.path.dirname(os.path.abspath(__file__))
+INPUT_SQL_DUMP_FILE = os.path.join(script_dir, 'assets.sql') # Ihre SQL-Dump-Datei
 
-OUTPUT_SQL_FILE_INSERTS_ONLY = os.path.join( 'insert_isms_assets_from_dump.sql')
-TARGET_ISMS_TABLE_NAME = 'assets'  # Name der Zieltabelle in der ISMS-Datenbank
+OUTPUT_SQL_FILE_INSERTS_ONLY = os.path.join(script_dir, 'insert_isms_assets_filtered.sql')
+TARGET_ISMS_TABLE_NAME = 'assets' # Name Ihrer existierenden Asset-Tabelle in der epsa_isms DB
 
-# --- Hilfsfunktionen zum Parsen von Werten aus SQL INSERTs ---
-def parse_sql_values_line(line):
+def parse_sql_value(value_str):
     """
-    Extrahiert Werte aus einer VALUES-Zeile wie "(1, 'Hostname', NULL, ...),".
-    Dies ist eine vereinfachte Annahme über das Format.
+    Konvertiert einen einzelnen SQL-Wert-String (z.B. "'Text'", "123", "NULL")
+    in einen Python-Typ (string, int, None).
+    Entfernt äußere Anführungszeichen von Strings und behandelt SQL-NULL und Escaping.
+    """
+    value_str = value_str.strip()
+    if value_str.upper() == 'NULL':
+        return None
+    if value_str.startswith("'") and value_str.endswith("'"):
+        # Ersetze SQL-escaped einfache Anführungszeichen ('') und Backslashes (\\)
+        return value_str[1:-1].replace("''", "'").replace("\\\\", "\\").replace("\\'", "'").replace('\\"', '"')
+    try:
+        # Versuche, als Ganzzahl zu parsen
+        return int(value_str)
+    except ValueError:
+        try:
+            # Versuche, als Fließkommazahl zu parsen
+            return float(value_str)
+        except ValueError:
+            # Wenn alles andere fehlschlägt, als String belassen
+            return value_str
+
+def parse_sql_values_line(line_content):
+    """
+    Extrahiert Werte aus dem Inhalt einer VALUES-Klammer, z.B. "1, 'Hostname', NULL".
+    Diese Funktion muss robust genug für SQL-String-Literale mit Kommas sein.
     """
     values = []
+    current_val = ''
     in_string = False
-    current_value = ""
     escape_next = False
-
-    # Entferne führende '(' und schließendes '),' oder ';'
-    line = line.strip()
-    if line.startswith('('):
-        line = line[1:]
-    if line.endswith('),'):
-        line = line[:-2]
-    elif line.endswith(');'):
-        line = line[:-2]
-    elif line.endswith(','): # Manchmal sind Dumps so formatiert
-        line = line[:-1]
-
-
-    for char in line:
+    idx = 0
+    while idx < len(line_content):
+        char = line_content[idx]
         if escape_next:
-            current_value += char
+            current_val += char
             escape_next = False
-            continue
-        if char == '\\':
+        elif char == '\\':
             escape_next = True
-            current_value += char # Behalte den Backslash erstmal, da er Teil des Escapings sein kann
-            continue
-        if char == "'" and not escape_next:
+            current_val += char # Behalte den Backslash
+        elif char == "'":
             in_string = not in_string
-            current_value += char # Behalte die Anführungszeichen
-            continue
-
-        if char == ',' and not in_string:
-            values.append(current_value.strip())
-            current_value = ""
+            current_val += char
+        elif char == ',' and not in_string:
+            values.append(parse_sql_value(current_val))
+            current_val = ''
         else:
-            current_value += char
+            current_val += char
+        idx += 1
     
-    if current_value: # Letzten Wert hinzufügen
-        values.append(current_value.strip())
-
-    # Konvertiere 'NULL' zu None und entferne Anführungszeichen von Strings
-    processed_values = []
-    for v in values:
-        if v == 'NULL':
-            processed_values.append(None)
-        elif v.startswith("'") and v.endswith("'"):
-            # Ersetze doppelte Anführungszeichen (SQL-Escape für einfaches Anführungszeichen)
-            # und andere mögliche Escapes
-            processed_values.append(v[1:-1].replace("''", "'").replace("\\\\", "\\").replace("\\'", "'"))
-        else:
-            try:
-                processed_values.append(int(v)) # Versuche int
-            except ValueError:
-                try:
-                    processed_values.append(float(v)) # Versuche float
-                except ValueError:
-                    processed_values.append(v) # Behalte als String
-    return processed_values
-
+    if current_val: # Letzten Wert hinzufügen
+        values.append(parse_sql_value(current_val))
+    return values
 
 def extract_data_from_sql_dump(sql_dump_content):
     """
-    Extrahiert Daten aus INSERT-Anweisungen für verschiedene Tabellen aus dem SQL-Dump.
-    Gibt Dictionaries zurück, die die Daten der Tabellen enthalten.
+    Extrahiert Daten aus INSERT-Anweisungen für verschiedene Tabellen aus dem SQL-Dump-Text.
     """
     data = {
-        'devices': [], 'device_types': [], 'operating_systems': [],
+        'devices': [], 
+        # 'device_types': [], # device_type ist direkt in devices
+        # 'operating_systems': [], # os_name/version nicht in separater Tabelle in assets.sql
         'rooms': [], 'floors': [], 'buildings': []
     }
     
-    # Regex, um INSERT INTO `table_name` ... VALUES zu finden
-    # und dann die Zeilen mit den Werten zu erfassen.
-    # Dieses Pattern ist vereinfacht und muss ggf. an das genaue Format Ihres Dumps angepasst werden.
-    insert_pattern = re.compile(r"INSERT INTO `(\w+)` \((.*?)\) VALUES\s*([\s\S]*?);", re.IGNORECASE)
+    # Angepasste Regex für `assets.sql`, die die Spaltennamen explizit enthält
+    insert_pattern = re.compile(
+        r"INSERT IGNORE INTO `(\w+)` \((.*?)\) VALUES\s*([\s\S]*?);", 
+        re.IGNORECASE
+    )
     
-    # Erwartete Spalten (Header) für jede Tabelle (basierend auf Ihrer devices.sql Struktur)
-    # Die Reihenfolge muss der Reihenfolge der Spalten in den INSERT Statements entsprechen.
-    table_headers = {
-        'devices': ['device_id', 'hostname', 'ip_address', 'mac_address', 'serial_number', 'type_id', 'room_id', 'os_id', 'purchase_date', 'warranty_expiration_date', 'status', 'notes'],
-        'device_types': ['type_id', 'type_name'],
-        'operating_systems': ['os_id', 'os_name', 'os_version'],
-        'rooms': ['room_id', 'room_name', 'floor_id'],
-        'floors': ['floor_id', 'floor_name', 'building_id'],
-        'buildings': ['building_id', 'building_name']
-    }
-
+    # Spaltenüberschriften basierend auf Ihrer `assets.sql` für die relevanten Tabellen
+    # Die Reihenfolge muss exakt der Reihenfolge der Spalten in den INSERT-Anweisungen entsprechen.
+    # Diese sind direkt aus Ihrer `assets.sql` (die Sie hochgeladen haben) abgeleitet.
+    # Die Tabelle `devices` in Ihrer `assets.sql` hat die Spalten `device_id`, `workplace_id`, `device_type`, usw.
+    # Die Tabellen `buildings`, `floors`, `rooms` haben ebenfalls definierte Spalten.
+    
+    # Wir lesen die Spalten direkt aus der `INSERT`-Zeile.
+    
+    print("Beginne Extraktion aus SQL-Dump...")
     for match in insert_pattern.finditer(sql_dump_content):
         table_name = match.group(1)
-        # column_list_str = match.group(2) # Spaltenliste, falls benötigt für dynamischere Zuweisung
+        column_list_str = match.group(2).strip()
         values_block_str = match.group(3)
 
         if table_name in data:
-            headers = table_headers.get(table_name)
-            if not headers:
-                print(f"WARNUNG: Keine Header-Definition für Tabelle '{table_name}' gefunden. Überspringe.")
-                continue
+            headers = [col.strip().replace('`', '') for col in column_list_str.split(',')]
+            
+            # Wertezeilen trennen
+            value_lines_raw = re.findall(r'\((.*?)\)(?:,\s*|$)', values_block_str, re.DOTALL)
 
-            # Wertezeilen trennen - Annahme: Jede Werte-Klammer ist in einer Zeile oder durch Komma getrennt
-            # und endet mit ',' oder ';' für die letzte Zeile im Block.
-            value_lines = re.findall(r'\((.*?)\)(?:,|$)', values_block_str, re.DOTALL)
-
-            for line_content in value_lines:
-                # Entferne führende/schließende Klammern, die von re.findall erfasst werden könnten
+            for line_content in value_lines_raw:
                 line_content = line_content.strip()
+                if not line_content: continue # Überspringe leere Zeilen
+
                 try:
-                    parsed_vals = parse_sql_values_line(f"({line_content})") # Füge Klammern für Parser hinzu
+                    parsed_vals = parse_sql_values_line(line_content)
                     if len(parsed_vals) == len(headers):
                         data[table_name].append(dict(zip(headers, parsed_vals)))
                     else:
-                        print(f"WARNUNG: Spaltenanzahl stimmt nicht mit Header für Tabelle '{table_name}' überein. Zeile: ({line_content})")
-                        print(f"  Erwartet: {len(headers)} ({headers}), Gefunden: {len(parsed_vals)} ({parsed_vals})")
+                        print(f"WARNUNG: Spaltenanzahl ({len(parsed_vals)}) stimmt nicht mit Header-Anzahl ({len(headers)}) für Tabelle '{table_name}' überein.")
+                        print(f"  Header: {headers}")
+                        print(f"  Werte:  {parsed_vals}")
+                        print(f"  Zeile:  ({line_content})")
                 except Exception as e:
-                    print(f"FEHLER beim Parsen einer Wertezeile für Tabelle '{table_name}': {line_content} - Fehler: {e}")
+                    print(f"FEHLER beim Parsen einer Wertezeile für Tabelle '{table_name}': ({line_content}) - Fehler: {e}")
         # else:
-            # print(f"Tabelle '{table_name}' wird nicht verarbeitet.")
+            # print(f"Tabelle '{table_name}' wird nicht von diesem Skript verarbeitet.")
 
-
-    for table_name, records in data.items():
-        print(f"{len(records)} Datensätze für Tabelle '{table_name}' extrahiert.")
+    for table_name_key, records in data.items():
+        print(f"{len(records)} Datensätze für Tabelle '{table_name_key}' aus Dump extrahiert.")
     return data
 
 def transform_extracted_data_and_generate_sql_inserts(extracted_data):
     """
     "Joint" und transformiert die extrahierten Daten und generiert SQL INSERT-Statements.
+    Filtert "Monitor" Einträge heraus.
     """
     sql_inserts = []
     
     # Erstelle Lookup-Dictionaries für einfaches "Joinen" im Speicher
-    device_types = {item['type_id']: item for item in extracted_data.get('device_types', [])}
-    operating_systems = {item['os_id']: item for item in extracted_data.get('operating_systems', [])}
-    rooms = {item['room_id']: item for item in extracted_data.get('rooms', [])}
-    floors = {item['floor_id']: item for item in extracted_data.get('floors', [])}
-    buildings = {item['building_id']: item for item in extracted_data.get('buildings', [])}
+    # (device_type ist direkt in der devices Tabelle Ihrer assets.sql)
+    # (operating_system ist in Ihrer assets.sql nicht als separate Tabelle, sondern als Spalte in devices, wenn vorhanden)
+    rooms_lookup = {item['room_id']: item for item in extracted_data.get('rooms', []) if 'room_id' in item}
+    floors_lookup = {item['floor_id']: item for item in extracted_data.get('floors', []) if 'floor_id' in item}
+    buildings_lookup = {item['building_id']: item for item in extracted_data.get('buildings', []) if 'building_id' in item}
 
-    print(f"Beginne Transformation von {len(extracted_data.get('devices', []))} Gerätedatensätzen für ISMS Assets...")
+    processed_devices_count = 0
+    skipped_monitors_count = 0
 
-    for device in extracted_data.get('devices', []):
-        # Hole verknüpfte Daten
-        dev_type_info = device_types.get(device.get('type_id'))
-        os_info = operating_systems.get(device.get('os_id'))
-        room_info = rooms.get(device.get('room_id'))
-        floor_info = floors.get(room_info.get('floor_id')) if room_info else None
-        building_info = buildings.get(floor_info.get('building_id')) if floor_info else None
+    for device_row in extracted_data.get('devices', []):
+        # Filter: Überspringe Geräte vom Typ "Monitor"
+        device_type_from_dump = device_row.get('device_type', '').strip()
+        if device_type_from_dump.lower() == 'monitor':
+            skipped_monitors_count += 1
+            continue
+        
+        processed_devices_count +=1
 
-        # ISMS assets.name = device_type
-        isms_name = dev_type_info.get('type_name', 'Unbekannter Gerätetyp') if dev_type_info else 'Unbekannter Gerätetyp'
+        # ISMS assets.name = device.device_type
+        isms_name = device_type_from_dump if device_type_from_dump else 'Unbekannter Gerätetyp'
         if not isms_name: isms_name = 'Gerät ohne Typbezeichnung'
 
-        isms_asset_type = dev_type_info.get('type_name', 'Hardware') if dev_type_info else 'Hardware'
+        # ISMS assets.asset_type (kann auch device_type sein oder generischer)
+        isms_asset_type = device_type_from_dump if device_type_from_dump else 'Hardware'
         if not isms_asset_type: isms_asset_type = 'Hardware'
 
+
         # ISMS assets.location
-        location_parts = [
-            building_info.get('building_name') if building_info else None,
-            floor_info.get('floor_name') if floor_info else None,
-            room_info.get('room_name') if room_info else None
-        ]
-        isms_location_str = ", ".join(filter(None, location_parts))
-        isms_location = isms_location_str if isms_location_str else None
+        building_name_val = None
+        if device_row.get('building_id') is not None:
+            building_info = buildings_lookup.get(device_row.get('building_id'))
+            if building_info:
+                building_name_val = building_info.get('building_name')
+        
+        floor_name_val = None
+        if device_row.get('floor_id') is not None:
+            floor_info = floors_lookup.get(device_row.get('floor_id'))
+            if floor_info:
+                floor_name_val = floor_info.get('floor_name')
+
+        room_name_val = None
+        if device_row.get('room_id') is not None:
+            room_info = rooms_lookup.get(device_row.get('room_id'))
+            if room_info:
+                room_name_val = room_info.get('room_name')
+
+        location_parts = [building_name_val, floor_name_val, room_name_val]
+        isms_location_str = " ".join(filter(None, location_parts)) # Mit Leerzeichen getrennt
+        isms_location = isms_location_str.strip() if isms_location_str.strip() else None
+
 
         # ISMS assets.description (Sammelfeld)
         description_parts = []
-        if device.get('hostname'): description_parts.append(f"Hostname: {device['hostname']}")
-        if device.get('ip_address'): description_parts.append(f"IP: {device['ip_address']}")
-        if device.get('mac_address'): description_parts.append(f"MAC: {device['mac_address']}")
-        if device.get('serial_number'): description_parts.append(f"S/N: {device['serial_number']}")
-        if os_info:
-            os_str = os_info.get('os_name', '')
-            if os_info.get('os_version'):
-                os_str += f" {os_info.get('os_version')}"
-            if os_str.strip(): description_parts.append(f"OS: {os_str.strip()}")
-        if device.get('status'): # device_operational_status
-            description_parts.append(f"Inventar-Status: {device['status']}")
-        if device.get('notes'): # device_notes
-            description_parts.append(f"Inventar-Notizen: {device['notes']}")
+        # Die Spaltennamen hier müssen exakt denen in Ihrer `devices` Tabelle (aus assets.sql) entsprechen
+        if device_row.get('hostname'): description_parts.append(f"Hostname: {device_row['hostname']}")
+        if device_row.get('ip_address'): description_parts.append(f"IP: {device_row['ip_address']}")
+        if device_row.get('mac_address'): description_parts.append(f"MAC: {device_row['mac_address']}")
+        if device_row.get('serial_number'): description_parts.append(f"S/N: {device_row['serial_number']}")
+        if device_row.get('inventory_number'): description_parts.append(f"Inventar-Nr: {device_row['inventory_number']}")
+        if device_row.get('manufacturer'): description_parts.append(f"Hersteller: {device_row['manufacturer']}")
+        if device_row.get('model'): description_parts.append(f"Modell: {device_row['model']}")
+        # In Ihrer `assets.sql` gibt es keine Spalte os_name oder os_version in der `devices` Tabelle.
+        # Sie müssten diese Information aus `device_notes` parsen oder es ist nicht vorhanden.
+        if device_row.get('status'): # Operativer Status
+            description_parts.append(f"Inventar-Status: {device_row['status']}")
+        if device_row.get('notes'): # Notizen aus Inventar
+            description_parts.append(f"Inventar-Notizen: {device_row['notes']}")
         
         isms_description_str = "; ".join(filter(None, description_parts))
         isms_description = isms_description_str if isms_description_str else None
 
-        isms_inventory_id_extern = str(device.get('device_id')) if device.get('device_id') is not None else None
+        isms_inventory_id_extern = str(device_row.get('device_id')) if device_row.get('device_id') is not None else None
         isms_classification = 'intern'
         isms_status_isms = 'aktiv'
 
@@ -199,6 +210,7 @@ def transform_extracted_data_and_generate_sql_inserts(extracted_data):
             if value is None: return "NULL"
             return f"'{str(value).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace("'", "''").replace("\\", "\\\\")}'"
 
+        # WICHTIG: Passen Sie die Spaltenliste an Ihre existierende 'assets'-Tabelle in 'epsa_isms' an!
         insert_sql = (
             f"INSERT INTO `{TARGET_ISMS_TABLE_NAME}` ("
             f"`name`, `asset_type`, `location`, `description`, `inventory_id_extern`, "
@@ -210,8 +222,9 @@ def transform_extracted_data_and_generate_sql_inserts(extracted_data):
             f");"
         )
         sql_inserts.append(insert_sql)
-
-    print(f"{len(sql_inserts)} INSERT-Statements für ISMS Assets generiert.")
+    
+    print(f"{len(sql_inserts)} INSERT-Statements für ISMS Assets (ohne Monitore) generiert.")
+    print(f"{skipped_monitors_count} Monitore wurden übersprungen.")
     return sql_inserts
 
 def main():
@@ -221,34 +234,32 @@ def main():
     try:
         with open(INPUT_SQL_DUMP_FILE, 'r', encoding='utf-8') as f:
             sql_dump_content = f.read()
-        print(f"SQL-Dump-Datei '{INPUT_SQL_DUMP_FILE}' erfolgreich gelesen.")
+        print(f"SQL-Dump-Datei '{INPUT_SQL_DUMP_FILE}' erfolgreich gelesen (Größe: {len(sql_dump_content)} Bytes).")
     except FileNotFoundError:
         print(f"FEHLER: Die SQL-Dump-Datei '{INPUT_SQL_DUMP_FILE}' wurde nicht gefunden.")
+        print(f"Erwarteter Pfad: {os.path.abspath(INPUT_SQL_DUMP_FILE)}")
         return
     except Exception as e:
         print(f"FEHLER beim Lesen der SQL-Dump-Datei: {e}")
         return
 
-    # Schritt 1: Daten aus dem SQL-Dump-Text extrahieren
     extracted_data = extract_data_from_sql_dump(sql_dump_content)
 
     if not extracted_data.get('devices'):
         print("Keine Gerätedaten im Dump gefunden oder extrahiert. Skript wird beendet.")
         return
 
-    # Schritt 2: Daten transformieren und INSERT-SQL-Statements generieren
     insert_statements = transform_extracted_data_and_generate_sql_inserts(extracted_data)
 
     if not insert_statements:
         print("Keine INSERT-Statements zum Schreiben vorhanden. Skript wird beendet.")
         return
         
-    # Schritt 3: Nur die INSERT-Statements in eine SQL-Datei schreiben
     try:
         with open(OUTPUT_SQL_FILE_INSERTS_ONLY, 'w', encoding='utf-8') as f:
             f.write(f"-- SQL INSERT Statements für die Tabelle '{TARGET_ISMS_TABLE_NAME}'\n")
             f.write(f"-- Generiert durch Parsen der Datei '{INPUT_SQL_DUMP_FILE}'.\n")
-            f.write(f"-- {len(insert_statements)} Geräte transformiert.\n")
+            f.write(f"-- {len(insert_statements)} Geräte (exkl. Monitore) transformiert.\n")
             f.write("-- Bitte stellen Sie sicher, dass die Zieltabelle bereits existiert und die Spaltennamen passen.\n\n")
             
             for stmt in insert_statements:

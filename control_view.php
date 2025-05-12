@@ -2,222 +2,137 @@
 require_once 'functions.php';
 requireLogin();
 
-$control_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT); // Interne DB-ID
+$control_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$control_id) {
-    header('Location: controls.php?status=error_invalid_id');
+    $_SESSION['flash_error'] = "Ungültige Control-ID.";
+    header('Location: controls.php');
     exit;
 }
 
 $pdo = getPDO();
 
-// Control-Daten abrufen, inklusive Name des Verantwortlichen (owner)
-// und Name des verknüpften Dokuments (linked_policy_document)
-$stmt = $pdo->prepare("
+// Control-Daten laden (Ihre bisherige Abfrage)
+$stmt_control = $pdo->prepare("
     SELECT c.*, u.username as owner_name, d.title as linked_document_title
     FROM controls c
     LEFT JOIN users u ON c.owner_id = u.id
-    LEFT JOIN documents d ON c.linked_policy_document_id = d.id
+    LEFT JOIN documents d ON c.linked_policy_document_id = d.id 
     WHERE c.id = ?
 ");
-$stmt->execute([$control_id]);
-$control = $stmt->fetch();
+$stmt_control->execute([$control_id]);
+$control = $stmt_control->fetch();
 
 if (!$control) {
-    header('Location: controls.php?status=error_notfound');
+    $_SESSION['flash_error'] = "Control nicht gefunden.";
+    header('Location: controls.php');
     exit;
 }
 
+// NEU: Verknüpfte Assets für dieses Control laden
+$stmt_linked_assets_ctrl = $pdo->prepare("
+    SELECT a.id, a.name, a.inventory_id_extern
+    FROM assets a
+    JOIN asset_controls ac ON a.id = ac.asset_id
+    WHERE ac.control_id = ?
+    ORDER BY a.name ASC
+");
+$stmt_linked_assets_ctrl->execute([$control_id]);
+$linked_assets_for_control = $stmt_linked_assets_ctrl->fetchAll();
+
+// NEU: Verknüpfte Risiken, die durch dieses Control behandelt werden
+$stmt_linked_risks_ctrl = $pdo->prepare("
+    SELECT r.id, r.name, r.risk_level, r.status
+    FROM risks r
+    JOIN risk_controls rc ON r.id = rc.risk_id
+    WHERE rc.control_id = ?
+    ORDER BY r.risk_level DESC, r.name ASC
+");
+$stmt_linked_risks_ctrl->execute([$control_id]);
+$linked_risks_for_control = $stmt_linked_risks_ctrl->fetchAll();
+
+$page_title = "Control Details: " . he($control['control_id_iso']);
 include 'header.php';
 ?>
 
-<h2>Control Details: <?php echo he($control['control_id_iso']); ?> - <?php echo he($control['name']); ?></h2>
+<h2><?php echo $page_title; ?> - <?php echo he($control['name']); ?></h2>
+<?php display_flash_messages(); ?>
 
-<div class="control-details-container">
-    <div class="detail-section">
-        <h3>Allgemeine Informationen</h3>
-        <div class="detail-item">
-            <span class="detail-label">Interne ID:</span>
-            <span class="detail-value"><?php echo he($control['id']); ?></span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Control ID (BSI/ISO):</span>
-            <span class="detail-value"><?php echo he($control['control_id_iso']); ?></span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Name / Titel:</span>
-            <span class="detail-value"><?php echo he($control['name']); ?></span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Beschreibung:</span>
-            <span class="detail-value description-box"><?php echo nl2br(he($control['description'] ?? 'Keine Beschreibung vorhanden.')); ?></span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Quelle:</span>
-            <span class="detail-value"><?php echo he($control['source']); ?></span>
-        </div>
+<div class="details-container">
+    <div class="actions-bar">
+        <a href="controls.php" class="btn btn-secondary">&laquo; Zurück zur Control-Liste</a>
+        <a href="control_edit.php?id=<?php echo he($control['id']); ?>" class="btn">Control bearbeiten & Dokument verknüpfen</a>
     </div>
 
-    <div class="detail-section">
-        <h3>ISMS Management Details</h3>
-        <div class="detail-item">
-            <span class="detail-label">Control Typ:</span>
-            <span class="detail-value"><?php echo he($control['control_type'] ? ucfirst($control['control_type']) : 'N/A'); ?></span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Implementierungsstatus:</span>
-            <span class="detail-value"><?php echo he(ucfirst($control['implementation_status'])); ?></span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Statusbeschreibung / Begründung:</span>
-            <span class="detail-value description-box"><?php echo nl2br(he($control['status_description'] ?? 'N/A')); ?></span>
-        </div>
-         <div class="detail-item">
-            <span class="detail-label">Begründung Anwendbarkeit (SoA):</span>
-            <span class="detail-value description-box"><?php echo nl2br(he($control['justification_applicability'] ?? 'N/A')); ?></span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Priorität:</span>
-            <span class="detail-value"><?php echo he(ucfirst($control['priority'])); ?></span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Verantwortlicher (Owner):</span>
-            <span class="detail-value"><?php echo he($control['owner_name'] ?? 'Nicht zugewiesen'); ?></span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Verantwortliche Abteilung:</span>
-            <span class="detail-value"><?php echo he($control['responsible_department'] ?? 'N/A'); ?></span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Wirksamkeit:</span>
-            <span class="detail-value"><?php echo he(ucfirst($control['effectiveness'])); ?></span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Notizen zur Wirksamkeitsprüfung:</span>
-            <span class="detail-value description-box"><?php echo nl2br(he($control['effectiveness_review_notes'] ?? 'N/A')); ?></span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Letzte Überprüfung am:</span>
-            <span class="detail-value"><?php echo $control['last_review_date'] ? he(date('d.m.Y', strtotime($control['last_review_date']))) : 'N/A'; ?></span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Nächste Überprüfung am:</span>
-            <span class="detail-value"><?php echo $control['next_review_date'] ? he(date('d.m.Y', strtotime($control['next_review_date']))) : 'N/A'; ?></span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Verknüpftes Richtliniendokument:</span>
-            <span class="detail-value">
-                <?php if ($control['linked_policy_document_id'] && $control['linked_document_title']): ?>
-                    <a href="document_view.php?id=<?php echo he($control['linked_policy_document_id']); ?>"><?php echo he($control['linked_document_title']); ?></a>
-                <?php else: ?>
-                    N/A
-                <?php endif; ?>
-            </span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Allgemeine Notizen:</span>
-            <span class="detail-value description-box"><?php echo nl2br(he($control['notes'] ?? 'N/A')); ?></span>
-        </div>
-    </div>
+    <fieldset class="metadata-section">
+        <legend>Allgemeine Informationen</legend>
+        <p><strong>Interne ID:</strong> <?php echo he($control['id']); ?></p>
+        <p><strong>Control ID (BSI/ISO):</strong> <?php echo he($control['control_id_iso']); ?></p>
+        <p><strong>Name / Titel:</strong> <?php echo he($control['name']); ?></p>
+        <p><strong>Beschreibung:</strong> <?php echo nl2br(he($control['description'] ?? 'N/A')); ?></p>
+        <p><strong>Quelle:</strong> <?php echo he($control['source'] ?? 'N/A'); ?></p>
+    </fieldset>
+    <fieldset class="metadata-section">
+        <legend>ISMS Management Details</legend>
+        <p><strong>Control Typ:</strong> <?php echo he($control['control_type'] ? ucfirst($control['control_type']) : 'N/A'); ?></p>
+        <p><strong>Implementierungsstatus:</strong> <?php echo he(ucfirst($control['implementation_status'])); ?></p>
+        <p><strong>Statusbeschreibung / Begründung:</strong> <?php echo nl2br(he($control['status_description'] ?? 'N/A')); ?></p>
+        <p><strong>Begründung Anwendbarkeit (SoA):</strong> <?php echo nl2br(he($control['justification_applicability'] ?? 'N/A')); ?></p>
+        <p><strong>Priorität:</strong> <?php echo he(ucfirst($control['priority'])); ?></p>
+        <p><strong>Verantwortlicher (Owner):</strong> <?php echo he($control['owner_name'] ?? 'Nicht zugewiesen'); ?></p>
+        <p><strong>Verantwortliche Abteilung:</strong> <?php echo he($control['responsible_department'] ?? 'N/A'); ?></p>
+        <p><strong>Wirksamkeit:</strong> <?php echo he(ucfirst($control['effectiveness'])); ?></p>
+        <p><strong>Notizen zur Wirksamkeitsprüfung:</strong> <?php echo nl2br(he($control['effectiveness_review_notes'] ?? 'N/A')); ?></p>
+        <p><strong>Letzte Überprüfung am:</strong> <?php echo $control['last_review_date'] ? he(date('d.m.Y', strtotime($control['last_review_date']))) : 'N/A'; ?></p>
+        <p><strong>Nächste Überprüfung am:</strong> <?php echo $control['next_review_date'] ? he(date('d.m.Y', strtotime($control['next_review_date']))) : 'N/A'; ?></p>
+        <p><strong>Verknüpftes Richtliniendokument:</strong>
+            <?php if ($control['linked_policy_document_id'] && $control['linked_document_title']): ?>
+                <a href="document_details_view.php?id=<?php echo he($control['linked_policy_document_id']); ?>"><?php echo he($control['linked_document_title']); ?></a>
+            <?php else: ?>
+                N/A
+            <?php endif; ?>
+        </p>
+        <p><strong>Allgemeine Notizen:</strong> <?php echo nl2br(he($control['notes'] ?? 'N/A')); ?></p>
+    </fieldset>
 
-    <div class="detail-section">
-        <h3>Zeitstempel</h3>
-        <div class="detail-item">
-            <span class="detail-label">Erstellt am:</span>
-            <span class="detail-value"><?php echo he(date('d.m.Y H:i:s', strtotime($control['created_at']))); ?></span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Letzte Änderung:</span>
-            <span class="detail-value"><?php echo he(date('d.m.Y H:i:s', strtotime($control['updated_at']))); ?></span>
-        </div>
-    </div>
-</div>
 
-<div class="actions-bar">
-    <a href="control_edit.php?id=<?php echo he($control['id']); ?>" class="btn">Control bearbeiten</a>
-    <a href="controls.php" class="btn btn-secondary">Zurück zur Control-Liste</a>
-</div>
+    <fieldset class="linked-items-section">
+        <legend>Assets, die durch dieses Control geschützt werden</legend>
+        <?php if (!empty($linked_assets_for_control)): ?>
+            <ul class="linked-list">
+                <?php foreach ($linked_assets_for_control as $asset_item): ?>
+                    <li>
+                        <a href="asset_view.php?id=<?php echo he($asset_item['id']); ?>">
+                            <?php echo he($asset_item['name']); ?> (Ext.ID: <?php echo he($asset_item['inventory_id_extern'] ?? 'N/A'); ?>)
+                        </a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <p>Dieses Control ist keinen Assets direkt zugeordnet.</p>
+        <?php endif; ?>
+    </fieldset>
 
-<div class="linked-items">
-    <h3>Risiken, die durch dieses Control behandelt werden</h3>
-    <p><em>Funktionalität wird später implementiert.</em></p>
+    <fieldset class="linked-items-section">
+        <legend>Risiken, die durch dieses Control behandelt werden</legend>
+        <?php if (!empty($linked_risks_for_control)): ?>
+            <ul class="linked-list">
+                <?php foreach ($linked_risks_for_control as $risk_item): ?>
+                    <li>
+                        <a href="risk_view.php?id=<?php echo he($risk_item['id']); ?>">
+                            <?php echo he($risk_item['name']); ?>
+                        </a>
+                        (Level: <?php echo he($risk_item['risk_level'] ?? 'N/A'); ?>, Status: <?php echo he(ucfirst($risk_item['status'] ?? 'N/A')); ?>)
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php else: ?>
+            <p>Dieses Control ist keinen Risiken als Behandlungsmaßnahme direkt zugeordnet.</p>
+        <?php endif; ?>
+    </fieldset>
 </div>
-<div class="linked-items">
-    <h3>Assets, die durch dieses Control geschützt werden</h3>
-    <p><em>Funktionalität wird später implementiert.</em></p>
-</div>
-
 
 <style>
-    .control-details-container {
-        background-color: #f9f9f9;
-        border: 1px solid #eee;
-        padding: 10px 20px; /* Etwas weniger Padding oben/unten */
-        border-radius: 5px;
-        margin-bottom: 20px;
-    }
-    .detail-section {
-        margin-bottom: 25px;
-        padding-bottom: 15px;
-        border-bottom: 1px solid #e0e0e0;
-    }
-    .detail-section:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
-        padding-bottom: 0;
-    }
-    .detail-section h3 {
-        margin-top: 0;
-        margin-bottom: 15px;
-        color: #337ab7; /* Blaue Akzentfarbe für Überschriften */
-        font-size: 1.1em;
-    }
-    .detail-item {
-        margin-bottom: 8px;
-        padding-bottom: 8px;
-        /* border-bottom: 1px dotted #ddd; */ /* Entfernt für sauberere Sektionen */
-        display: flex; /* Flexbox für Label und Wert */
-        flex-wrap: wrap; /* Umbruch bei Bedarf */
-    }
-    .detail-item:last-child {
-        /* border-bottom: none; */
-        margin-bottom: 0;
-        padding-bottom: 0;
-    }
-    .detail-label {
-        font-weight: bold;
-        color: #333;
-        min-width: 220px; /* Mindestbreite für die Labels */
-        padding-right: 10px; /* Abstand zum Wert */
-        flex-shrink: 0; /* Verhindert, dass Label schrumpft */
-    }
-    .detail-value {
-        color: #555;
-        flex-grow: 1; /* Wert nimmt restlichen Platz ein */
-    }
-    .description-box { /* Spezielles Styling für längere Textfelder */
-        background-color: #fff;
-        border: 1px solid #ddd;
-        padding: 8px;
-        border-radius: 3px;
-        min-height: 40px;
-        white-space: pre-wrap; /* Erhält Zeilenumbrüche und Leerzeichen */
-        word-break: break-word;
-    }
-    .actions-bar {
-        margin-top: 20px;
-        margin-bottom: 30px;
-    }
-    .actions-bar .btn {
-        margin-right: 10px;
-    }
-    .btn-secondary {
-        background-color: #6c757d;
-    }
-    .linked-items {
-        margin-top: 30px;
-        padding-top: 20px;
-        border-top: 1px solid #ccc;
-    }
+    /* ... (siehe Styles von asset_view.php) ... */
 </style>
 
 <?php include 'footer.php'; ?>

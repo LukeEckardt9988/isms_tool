@@ -2,34 +2,43 @@
 require_once 'functions.php';
 requireLogin();
 
-$pdo = getPDO();
+$pdo = getPDO(); // Stellt Verbindung zur 'epsa_isms' Datenbank her
 
-// Assets
+// Assets Zählung
 $stmtAssets = $pdo->query("SELECT COUNT(*) as count FROM assets");
 $assetCount = $stmtAssets->fetchColumn();
 
-// Risiken
+// Risiken Zählung
 $stmtRisksOpen = $pdo->query("SELECT COUNT(*) as count FROM risks WHERE status NOT IN ('geschlossen', 'akzeptiert')");
 $openRiskCount = $stmtRisksOpen->fetchColumn();
 $stmtRisksTotal = $pdo->query("SELECT COUNT(*) as count FROM risks");
 $totalRiskCount = $stmtRisksTotal->fetchColumn();
 
-// Controls - Zählung für das Diagramm
+// Controls - Zählung für das Kreisdiagramm
 $control_status_counts_for_chart = [];
-// Die Status, die wir im Diagramm sehen wollen (und ihre Reihenfolge)
-// Passen Sie diese an die ENUM-Werte in Ihrer DB und die gewünschte Darstellung an
-$status_options_for_chart = ['geplant', 'in Umsetzung', 'teilweise umgesetzt', 'vollständig umgesetzt', 'nicht relevant', 'verworfen']; 
+// Definieren Sie hier die Status, die im Diagramm erscheinen sollen,
+// in der gewünschten Reihenfolge (beeinflusst auch Farbzuweisung)
+$status_options_for_control_chart = ['geplant', 'in Umsetzung', 'teilweise umgesetzt', 'vollständig umgesetzt', 'nicht relevant', 'verworfen'];
 
-foreach ($status_options_for_chart as $status_item) {
+foreach ($status_options_for_control_chart as $status_item) {
     $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM controls WHERE implementation_status = ?");
     $stmt->execute([$status_item]);
-    // Nur Status mit mehr als 0 Controls ins Diagramm aufnehmen, um es übersichtlich zu halten (optional)
     $count = $stmt->fetchColumn();
-    if ($count > 0) {
-         $control_status_counts_for_chart[$status_item] = $count;
-    }
+    // Entscheidung: Nur Status mit Controls > 0 ins Diagramm oder alle?
+    // Für ein vollständiges Bild ist es oft besser, alle definierten Statuskategorien zu haben, auch wenn sie 0 sind.
+    $control_status_counts_for_chart[$status_item] = $count ?? 0;
 }
-$totalControlsCount = array_sum($control_status_counts_for_chart); // Gesamtzahl basierend auf gefilterten Status
+$totalControlsCount = array_sum(array_values($control_status_counts_for_chart));
+
+// Daten für Risikolevel-Radar-Chart
+$risk_level_categories_for_chart = ['Niedrig', 'Mittel', 'Hoch', 'Kritisch']; // Passen Sie dies an Ihre Risikolevel-Definition an
+$risk_level_counts_for_chart = [];
+foreach ($risk_level_categories_for_chart as $level) {
+    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM risks WHERE risk_level = ? AND status NOT IN ('geschlossen', 'akzeptiert')"); // Nur offene Risiken
+    $stmt->execute([$level]);
+    $risk_level_counts_for_chart[$level] = $stmt->fetchColumn() ?? 0;
+}
+$totalOpenRisksForChart = array_sum(array_values($risk_level_counts_for_chart));
 
 include 'header.php';
 ?>
@@ -48,57 +57,112 @@ include 'header.php';
         <p>Offen: <?php echo he($openRiskCount); ?> / Gesamt: <?php echo he($totalRiskCount); ?></p>
         <a href="risks.php" class="btn">Risiken verwalten</a>
     </div>
-    <div class="widget chart-widget"> <h3>Übersicht Control-Status</h3>
-        <?php if (!empty($control_status_counts_for_chart)): ?>
+    <div class="widget chart-widget">
+        <h3>Übersicht Control-Status (Gesamt: <?php echo he($totalControlsCount); ?>)</h3>
+        <div class="chart-container">
             <canvas id="controlStatusChart"></canvas>
-        <?php else: ?>
-            <p>Keine Control-Daten für das Diagramm verfügbar.</p>
-        <?php endif; ?>
-        <div style="text-align: center; margin-top: 15px;"> <a href="controls.php" class="btn">Controls verwalten</a>
+        </div>
+        <div style="text-align: center; margin-top: auto; padding-top:15px;">
+            <a href="controls.php" class="btn">Controls verwalten</a>
+        </div>
+    </div>
+
+    <div class="widget chart-widget">
+        <h3>Risikolevel Verteilung (Offene Risiken: <?php echo he($totalOpenRisksForChart); ?>)</h3>
+        <div class="chart-container">
+            <canvas id="riskLevelRadarChart"></canvas>
+        </div>
+        <div style="text-align: center; margin-top: auto; padding-top:15px;">
+            <a href="risks.php" class="btn">Risiken verwalten</a>
         </div>
     </div>
 </div>
-
 <style>
-    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-    .widget { border: 1px solid #ccc; padding: 15px; border-radius: 5px; background-color: #f9f9f9; display: flex; flex-direction: column;}
-    .widget h3 { margin-top: 0; color: #337ab7; text-align: center; }
-    .widget p { margin-bottom: 8px; }
-    .chart-widget { min-height: 380px; /* Mindesthöhe für das Diagramm-Widget */ }
-    #controlStatusChart { max-width: 100%; margin: 0 auto; /* Zentriert das Canvas, falls es schmaler ist */ max-height: 300px; /* Höhe des Diagramms */ display: block; }
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 20px;
+        padding-bottom: 20px;
+        /* Etwas Platz am Ende der Seite */
+    }
+
+    .widget {
+        border: 1px solid #ccc;
+        padding: 15px;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .widget h3 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: #337ab7;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    .widget p {
+        margin-bottom: 8px;
+        flex-shrink: 0;
+    }
+
+    /* Wrapper für Canvas, um die Höhe und das responsive Verhalten besser zu kontrollieren */
+    .chart-container {
+        position: relative;
+        height: 280px;
+        /* Höhe für den Diagramm-Bereich, ggf. anpassen */
+        width: 100%;
+        flex-grow: 1;
+        /* Dieser Container füllt den verfügbaren vertikalen Platz im .widget */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    #controlStatusChart,
+    #riskLevelRadarChart {
+        display: block;
+        max-width: 100%;
+        max-height: 100%;
+    }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script> <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const ctx = document.getElementById('controlStatusChart');
-    if (ctx) {
-        const controlStatusData = <?php echo json_encode($control_status_counts_for_chart); ?>;
-        
-        const labels = Object.keys(controlStatusData).map(status => {
-            return status.charAt(0).toUpperCase() + status.slice(1);
-        });
-        const dataValues = Object.values(controlStatusData);
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sicherstellen, dass ChartDataLabels global verfügbar ist
+        // (wird automatisch von Chart.js gemacht, wenn das Plugin geladen ist)
 
-        // Überprüfen, ob überhaupt Daten vorhanden sind, um Fehler zu vermeiden
-        if (dataValues.reduce((a, b) => a + b, 0) > 0) { // Prüft, ob die Summe der Werte > 0 ist
-            new Chart(ctx, {
-                type: 'pie', // oder 'doughnut'
+        // Kreisdiagramm für Control-Status
+        const ctxControl = document.getElementById('controlStatusChart');
+        const controlStatusDataPHP = <?php echo json_encode($control_status_counts_for_chart); ?>;
+
+        if (ctxControl && controlStatusDataPHP && Object.keys(controlStatusDataPHP).length > 0) {
+            const controlLabels = Object.keys(controlStatusDataPHP).map(status => status.charAt(0).toUpperCase() + status.slice(1));
+            const controlDataValues = Object.values(controlStatusDataPHP);
+
+            // Nur zeichnen, wenn es tatsächlich Werte > 0 gibt oder Sie leere Diagramme zeigen wollen
+            // if (controlDataValues.some(v => v > 0)) { // Wenn nur bei > 0 gezeichnet werden soll
+            new Chart(ctxControl, {
+                type: 'pie',
                 data: {
-                    labels: labels,
+                    labels: controlLabels,
                     datasets: [{
                         label: 'Control Status',
-                        data: dataValues,
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.8)',  // Rot (z.B. geplant)
+                        data: controlDataValues,
+                        backgroundColor: [ // Stellen Sie sicher, dass Sie genug Farben für Ihre Status haben
+                            'rgba(255, 99, 132, 0.8)', // Rot (z.B. geplant)
                             'rgba(54, 162, 235, 0.8)', // Blau (z.B. in Umsetzung)
                             'rgba(255, 159, 64, 0.8)', // Orange (z.B. teilweise umgesetzt)
                             'rgba(75, 192, 192, 0.8)', // Grün (z.B. vollständig umgesetzt)
-                            'rgba(153, 102, 255, 0.8)',// Violett (z.B. nicht relevant)
+                            'rgba(153, 102, 255, 0.8)', // Violett (z.B. nicht relevant)
                             'rgba(201, 203, 207, 0.8)' // Grau (z.B. verworfen)
-                            // Fügen Sie mehr Farben hinzu, falls Sie mehr Status haben
                         ],
-                        borderColor: '#fff', // Weiße Ränder für bessere Trennung
+                        borderColor: '#fff',
                         borderWidth: 2
                     }]
                 },
@@ -107,70 +171,125 @@ document.addEventListener('DOMContentLoaded', function () {
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: 'bottom', // Legende unten für mehr Platz
+                            position: 'bottom',
                             labels: {
-                                padding: 15,
+                                padding: 10,
                                 font: {
-                                    size: 12
-                                }
-                            }
-                        },
-                        title: {
-                            display: false, // Titel wird bereits im Widget-Header angezeigt
-                            // text: 'Übersicht Control Status' 
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed !== null) {
-                                        label += context.parsed;
-                                    }
-                                    const total = context.dataset.data.reduce((acc, value) => acc + value, 0);
-                                    const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) + '%' : '0%';
-                                    label += ` (${percentage})`;
-                                    return label;
+                                    size: 11
                                 }
                             }
                         },
                         datalabels: { // Konfiguration für chartjs-plugin-datalabels
-                            display: true, // true, um Labels anzuzeigen; 'auto' für automatische Entscheidung
-                            color: '#fff', // Farbe der Zahlen
+                            display: true,
+                            color: '#fff',
                             font: {
                                 weight: 'bold',
-                                size: 12,
+                                size: 11,
                             },
                             formatter: (value, context) => {
-                                // Zeige den Wert nur an, wenn er nicht 0 ist (optional)
-                                // if (value === 0) return ''; 
-                                
                                 const total = context.chart.data.datasets[0].data.reduce((acc, val) => acc + val, 0);
                                 const percentage = total > 0 ? ((value / total) * 100) : 0;
-                                // Zeige nur Prozentsatz an, wenn er signifikant ist (z.B. > 5%)
-                                if (percentage < 5 && value !== 0) return value; // Zeige kleine Werte als absolute Zahl
-                                if (percentage >=5) return percentage.toFixed(0) + '%';
-                                return ''; // Verstecke Label für 0-Werte oder sehr kleine Prozentsätze
+                                if (value === 0 && total > 0) return '0%'; // Zeige 0% wenn Wert 0 ist aber andere Werte existieren
+                                if (value === 0) return ''; // Verstecke Label wenn Wert und Total 0 sind
+
+                                if (total > 0 && percentage < 7 && value !== 0) return value; // Absolute Zahl für kleine Segmente
+                                if (total > 0 && percentage >= 7) return percentage.toFixed(0) + '%';
+                                return value; // Fallback, wenn Total 0 ist (zeigt absoluten Wert)
                             },
-                            anchor: 'center', // Position des Labels
-                            align: 'center'   // Ausrichtung des Labels
+                            anchor: 'center',
+                            align: 'center'
                         }
                     }
                 },
                 plugins: [ChartDataLabels] // Plugin registrieren
             });
-        } else {
-            // Optional: Nachricht anzeigen, wenn keine Daten für das Diagramm vorhanden sind
-            // (wird bereits durch PHP oben abgedeckt)
-             ctx.getContext('2d').fillText('Keine Daten für das Diagramm vorhanden.', ctx.width / 2, ctx.height / 2);
-             ctx.textAlign = 'center';
+            // } // Ende der if (controlDataValues.some(v => v > 0)) Bedingung
         }
-    } else {
-        console.error("Canvas Element mit ID 'controlStatusChart' nicht gefunden.");
-    }
-});
+
+        // Radar-Chart für Risikolevel
+        const ctxRiskRadar = document.getElementById('riskLevelRadarChart');
+        const riskLevelDataPHP = <?php echo json_encode($risk_level_counts_for_chart); ?>;
+
+        if (ctxRiskRadar && riskLevelDataPHP && Object.keys(riskLevelDataPHP).length > 0) {
+            const riskLabels = Object.keys(riskLevelDataPHP).map(label => label.charAt(0).toUpperCase() + label.slice(1));
+            const riskDataValues = Object.values(riskLevelDataPHP);
+
+            // if (riskDataValues.some(v => v > 0)) { // Wenn nur bei > 0 gezeichnet werden soll
+            new Chart(ctxRiskRadar, {
+                type: 'radar',
+                data: {
+                    labels: riskLabels,
+                    datasets: [{
+                        label: 'Anzahl offener Risiken',
+                        data: riskDataValues,
+                        fill: true,
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgb(54, 162, 235)',
+                        pointBackgroundColor: 'rgb(54, 162, 235)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(54, 162, 235)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    elements: {
+                        line: {
+                            borderWidth: 2
+                        }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            ticks: {
+                                // Dynamische Schrittweite, um Überlappung zu vermeiden
+                                callback: function(value, index, values) {
+                                    // Zeige nur jeden n-ten Tick, wenn viele Ticks da wären, oder ganze Zahlen
+                                    if (values.length > 5 && value % (Math.ceil(Math.max(...values) / 5) || 1) !== 0 && value !== 0) {
+                                        return '';
+                                    }
+                                    return Number.isInteger(value) ? value : '';
+                                },
+                                stepSize: Math.max(1, Math.ceil(Math.max(...riskDataValues, 1) / 4)), // Mind. 4 Schritte oder Schrittweite 1
+                                backdropColor: 'rgba(255, 255, 255, 0.75)'
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 12,
+                                    weight: '500'
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        datalabels: {
+                            display: true,
+                            color: 'rgb(54, 162, 235)',
+                            align: 'end',
+                            anchor: 'end',
+                            font: {
+                                weight: 'bold',
+                                size: 11
+                            },
+                            formatter: (value) => {
+                                return value > 0 ? value : '';
+                            }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+            // } // Ende der if (riskDataValues.some(v => v > 0)) Bedingung
+        }
+    });
 </script>
 
 <?php include 'footer.php'; ?>
