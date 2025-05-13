@@ -2,6 +2,11 @@
 require_once 'functions.php';
 requireLogin();
 
+ if (!hasPermission(getCurrentUserRole(), 'create')) {
+        echo '<script>alert("Fehlende Autorisierung."); window.history.back();</script>';
+        exit;
+    }
+
 $control_db_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT); // Die interne DB ID
 if (!$control_db_id) {
     header('Location: controls.php?status=error_invalid_id');

@@ -2,6 +2,11 @@
 require_once 'functions.php';
 requireLogin();
 
+ if (!hasPermission(getCurrentUserRole(), 'create')) {
+        echo '<script>alert("Fehlende Autorisierung."); window.history.back();</script>';
+        exit;
+    }
+
 $asset_id = null;
 // ID aus GET holen, wenn die Seite zum Bearbeiten aufgerufen wird
 if (isset($_GET['id'])) {

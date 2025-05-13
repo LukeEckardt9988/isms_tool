@@ -1,6 +1,11 @@
 <?php
 require_once 'functions.php';
-requireLogin(); // Admin-Rolle oder spezifische Berechtigung wäre hier besser
+requireLogin(); 
+
+ if (!hasPermission(getCurrentUserRole(), 'create')) {
+        echo '<script>alert("Fehlende Autorisierung."); window.history.back();</script>';
+        exit;
+    }
 
 $risk_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 

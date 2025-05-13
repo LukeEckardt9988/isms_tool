@@ -2,6 +2,11 @@
 require_once 'functions.php';
 requireLogin();
 
+ if (!hasPermission(getCurrentUserRole(), 'create')) {
+        echo '<script>alert("Fehlende Autorisierung."); window.history.back();</script>';
+        exit;
+    }
+
 $pdo = getPDO();
 $is_new_risk = true; // Diese Seite ist immer für neue Risiken
 

@@ -2,6 +2,13 @@
 require_once 'functions.php';
 requireLogin();
 
+
+ if (!hasPermission(getCurrentUserRole(), 'create')) {
+        echo '<script>alert("Fehlende Autorisierung."); window.history.back();</script>';
+        exit;
+    }
+    
+
 $risk_id = null;
 // ID-Handling
 if (isset($_GET['id'])) $risk_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);

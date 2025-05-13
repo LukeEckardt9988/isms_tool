@@ -2,6 +2,11 @@
 require_once 'functions.php';
 requireLogin();
 
+ if (!hasPermission(getCurrentUserRole(), 'create')) {
+        echo '<script>alert("Fehlende Autorisierung."); window.history.back();</script>';
+        exit;
+    }
+
 $document_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$document_id && $_SERVER['REQUEST_METHOD'] !== 'POST') { // Erlaube POST auch ohne ID für den Fall, dass sie im Formular ist
     $_SESSION['flash_error'] = "Ungültige oder fehlende Dokumenten-ID.";

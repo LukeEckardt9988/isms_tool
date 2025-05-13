@@ -2,6 +2,12 @@
 require_once 'functions.php';
 requireLogin();
 
+ if (!hasPermission(getCurrentUserRole(), 'create')) {
+        echo '<script>alert("Fehlende Autorisierung."); window.history.back();</script>';
+        exit;
+    }
+
+
 $pdo = getPDO();
 $users = $pdo->query("SELECT id, username FROM users WHERE is_active = TRUE ORDER BY username")->fetchAll(); // Für Dropdown "Verantwortlicher"
 
