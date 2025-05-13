@@ -570,3 +570,74 @@ th {
 .search-form input[type="text"] {
     flex-grow: 1;
 }
+
+/* -------------------------------------------------------------------------- */
+/* 13. conrols status                                                          */
+/* -------------------------------------------------------------------------- */
+
+
+/* ... (bisherige CSS-Regeln) ... */
+
+/* Implementierungsstatus-Farben (Subtil und Kräftig) */
+.status-vollstaendig,
+.status-vollstaendig td,
+.status-vollstaendig th,
+.status-vollstaendig a.btn {
+    background-color: rgba(0, 255, 85, 0.1) !important; /* Dunkleres, gedämpftes Hellgrün, transparent */
+    color: #7effaf !important;                     /* Dunkleres, kräftiges Grün */
+    border-color: rgba(0, 255, 76, 0.1) !important;   /* Etwas dunkleres, gedämpftes Grün, transparent */
+}
+
+.status-teilweise,
+.status-teilweise td,
+.status-teilweise th,
+.status-teilweise a.btn {
+    background-color: rgba(240, 227, 171, 0.1) !important; /* Dunkleres, gedämpftes Beige, transparent */
+    color: #eccf84 !important;                     /* Dunkleres, kräftiges Braun */
+    border-color: rgba(224, 193, 138, 0.1) !important;   /* Etwas dunkleres, gedämpftes Gelb, transparent */
+}
+
+.status-in-umsetzung,
+.status-in-umsetzung td,
+.status-in-umsetzung th,
+.status-in-umsetzung a.btn {
+    background-color: rgba(157, 204, 230, 0.1) !important; /* Dunkleres, gedämpftes Hellblau, transparent */
+    color: #72a8df !important;                     /* Dunkleres, kräftiges Blau */
+    border-color: rgba(126, 180, 214, 0.1) !important;   /* Etwas dunkleres, gedämpftes Blau, transparent */
+}
+
+/* "Verworfen" - Dunkles Grau */
+.status-verworfen,
+.status-verworfen td,
+.status-verworfen th,
+.status-verworfen a.btn {
+    background-color: rgba(15, 15, 15, 0.1) !important; /* Etwas dunkleres, gedämpftes Hellgrau, transparent */
+    color: #555555 !important;                     /* Sehr dunkles, kräftiges Grau */
+    border-color: rgba(202, 202, 202, 0.1) !important;
+}
+
+.status-verworfen a.btn:hover {
+    background-color: rgba(217, 221, 225, 0.5) !important; /* Noch etwas dunkleres Hellgrau, transparent */
+}
+
+/* "Nicht relevant" - Mittleres Grau */
+.status-nicht-relevant,
+.status-nicht-relevant td,
+.status-nicht-relevant th,
+.status-nicht-relevant a.btn {
+    background-color: rgba(20, 20, 20, 0.1) !important; /* Sehr helles Grau, transparent */
+    color: #55595e !important;                     /* Mittleres, kräftiges Grau */
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.status-nicht-relevant a.btn:hover {
+    background-color: rgba(233, 236, 239, 0.5) !important; /* Etwas dunkleres Hellgrau, transparent */
+}
+
+
+/* Hellblauer Hintergrund für geänderte Zeilen */
+.changed-control {
+    background-color: rgba(208, 224, 239, 0.4) !important; /* Dunkleres, gedämpftes Hellblau, transparent */
+}
+
+/* ... (weitere CSS-Regeln) ... */

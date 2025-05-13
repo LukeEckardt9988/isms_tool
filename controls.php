@@ -5,37 +5,24 @@ requireLogin();
 $pdo = getPDO();
 $controls = [];
 
-// Suchlogik
+// Suchlogik (wie zuvor)
 $search_term = trim($_GET['search'] ?? '');
-
-// Sortierlogik (behalten wir bei, falls Sie sie später wieder aktivieren wollen oder für andere Spalten)
-// Für Controls ist control_id_iso oft die primäre Sortierung.
 $sortable_columns = ['control_id_iso', 'name', 'source', 'implementation_status', 'priority', 'description'];
-$sort_column = $_GET['sort'] ?? 'control_id_iso'; // Standard-Sortierspalte
-$sort_direction = $_GET['dir'] ?? 'ASC';   // Standard-Sortierrichtung
-
-// Validierung der Sortierparameter
+$sort_column = $_GET['sort'] ?? 'control_id_iso';
+$sort_direction = $_GET['dir'] ?? 'ASC';
 if (!in_array($sort_column, $sortable_columns)) {
-    $sort_column = 'control_id_iso'; // Fallback
+    $sort_column = 'control_id_iso';
 }
 if (strtoupper($sort_direction) !== 'ASC' && strtoupper($sort_direction) !== 'DESC') {
-    $sort_direction = 'ASC'; // Fallback
+    $sort_direction = 'ASC';
 }
 $next_sort_direction = ($sort_direction === 'ASC') ? 'DESC' : 'ASC';
 
-// SQL-Abfrage vorbereiten
-$sql = "
-    SELECT id, control_id_iso, name, source, implementation_status, priority, description 
-    FROM controls
-";
-$params = []; // Array für Parameter der Prepared Statements
-
-// WHERE-Klausel für die Suche hinzufügen
+// SQL-Abfrage (wie zuvor)
+$sql = "SELECT id, control_id_iso, name, source, implementation_status, priority, description FROM controls";
+$params = [];
 if (!empty($search_term)) {
-    // Spalten, die durchsucht werden sollen
-    // 'control_id_iso', 'name', und 'description' sind hier die wichtigsten für Controls
     $search_columns_controls = ['control_id_iso', 'name', 'description', 'source', 'implementation_status'];
-
     $where_clauses_controls = [];
     foreach ($search_columns_controls as $column) {
         $where_clauses_controls[] = "`$column` LIKE ?";
@@ -43,9 +30,7 @@ if (!empty($search_term)) {
     }
     $sql .= " WHERE (" . implode(" OR ", $where_clauses_controls) . ")";
 }
-
-// ORDER BY-Klausel hinzufügen
-$sql .= " ORDER BY `$sort_column` $sort_direction, control_id_iso ASC"; // Sekundäre Sortierung
+$sql .= " ORDER BY `$sort_column` $sort_direction, control_id_iso ASC";
 
 try {
     $stmt = $pdo->prepare($sql);
@@ -58,13 +43,27 @@ try {
 
 include 'header.php';
 
-function getSortArrow($column_name, $current_sort_column, $current_sort_direction)
-{
+function getSortArrow($column_name, $current_sort_column, $current_sort_direction) {
     if ($column_name === $current_sort_column) {
         return $current_sort_direction === 'ASC' ? ' &#9650;' : ' &#9660;';
     }
     return '';
 }
+
+// Funktion für alphanumerische Sortierung von Control IDs
+function sortControlIdsAlphaNum($a, $b) {
+    return strnatcmp($a['control_id_iso'], $b['control_id_iso']);
+}
+
+// Sortieren der Controls, wenn nach 'control_id_iso' sortiert wird
+if ($sort_column === 'control_id_iso') {
+    usort($controls, 'sortControlIdsAlphaNum');
+    if ($sort_direction === 'DESC') {
+        $controls = array_reverse($controls); // Umkehren für DESC
+    }
+}
+
+
 ?>
 
 <h2>Control Management (Maßnahmen / Anforderungen)</h2>
@@ -84,7 +83,6 @@ function getSortArrow($column_name, $current_sort_column, $current_sort_directio
         <?php endif; ?>
     </div>
 </form>
-
 
 <div class="table-container">
     <table>
@@ -112,7 +110,28 @@ function getSortArrow($column_name, $current_sort_column, $current_sort_directio
                 </tr>
             <?php else: ?>
                 <?php foreach ($controls as $control): ?>
-                    <tr>
+                    <?php
+                    $status_class = '';
+                    switch ($control['implementation_status']) {
+                        case 'vollständig umgesetzt':
+                            $status_class = 'status-vollstaendig';
+                            break;
+                        case 'teilweise umgesetzt':
+                            $status_class = 'status-teilweise';
+                            break;
+                        case 'in Umsetzung':
+                            $status_class = 'status-in-umsetzung';
+                            break;
+                        case 'verworfen':
+                            $status_class = 'status-verworfen';
+                            break;
+                        case 'nicht relevant':
+                            $status_class = 'status-nicht-relevant';
+                            break;
+                    }
+                    ?>
+                    <tr <?php if (isset($_SESSION['changed_controls'][$control['id']])): ?>class="changed-control"<?php endif; ?>
+                        <?php if (!empty($status_class)): ?>class="<?php echo $status_class; ?>"<?php endif; ?>>
                         <td><?php echo he($control['control_id_iso']); ?></td>
                         <td><?php echo he($control['name']); ?></td>
                         <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?php echo he($control['description']); ?>">
@@ -136,5 +155,6 @@ function getSortArrow($column_name, $current_sort_column, $current_sort_directio
     </table>
 </div>
 
+<?php unset($_SESSION['changed_controls']); // Markierungen zurücksetzen ?>
 
 <?php include 'footer.php'; ?>
