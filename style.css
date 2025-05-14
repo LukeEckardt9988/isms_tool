@@ -611,7 +611,7 @@ th {
 .status-verworfen td,
 .status-verworfen th,
 .status-verworfen a.btn {
-    background-color: rgba(15, 15, 15, 0.1) !important; /* Etwas dunkleres, gedämpftes Hellgrau, transparent */
+    background-color: rgba(0, 0, 0, 0.3) !important; /* Etwas dunkleres, gedämpftes Hellgrau, transparent */
     color: #555555 !important;                     /* Sehr dunkles, kräftiges Grau */
     border-color: rgba(202, 202, 202, 0.1) !important;
 }
@@ -625,7 +625,7 @@ th {
 .status-nicht-relevant td,
 .status-nicht-relevant th,
 .status-nicht-relevant a.btn {
-    background-color: rgba(20, 20, 20, 0.1) !important; /* Sehr helles Grau, transparent */
+    background-color: rgba(8, 8, 8, 0.3) !important; /* Sehr helles Grau, transparent */
     color: #55595e !important;                     /* Mittleres, kräftiges Grau */
     border-color: rgba(255, 255, 255, 0.1) !important;
 }
