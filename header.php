@@ -34,6 +34,10 @@
                     <div><i class="fas fa-shield-alt"></i></div>
                     Controls
                 </a>
+                 <a href="tasks.php" aria-label="Tasks">
+                    <div><i class="fas fa-tasks"></i></div>
+                    Aufgaben
+                </a>
                 <a href="documents.php" aria-label="Dokumente">
                     <div><i class="fas fa-file-alt"></i></div>
                     Dokumente
