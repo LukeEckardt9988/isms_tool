@@ -217,6 +217,7 @@ table {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 1em;
+
 }
 
 th,
@@ -297,90 +298,165 @@ th {
 /* 6.  Buttons                                                              */
 /* -------------------------------------------------------------------------- */
 
+/* Füge diese Regeln in deine style.css ein */
+
+/* Standard Button (ist bei dir wohl schon definiert, hier nur zur Vollständigkeit) */
 .btn {
-    padding: 10px 15px;
-    background-color: var(--color-primary);
-    color: var(--color-white);
-    border: none;
-    cursor: pointer;
-    text-decoration: none;
     display: inline-block;
-    border-radius: 4px;
-    /* Einheitlicher Radius für Buttons */
+    font-weight: 400; /* Normaler Text */
+    line-height: 1.5;
+    color: var(--color-white); /* Textfarbe */
+    text-align: center;
+    text-decoration: none;
+    vertical-align: middle;
+    cursor: pointer;
+    user-select: none;
+    border: 1px solid transparent; /* Standardmäßig kein sichtbarer Rahmen */
+    padding: .375rem .75rem; /* Innenabstand */
+    font-size: 1rem; /* Schriftgröße */
+    border-radius: .25rem; /* Abrundung Ecken */
+    transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out; /* Übergang für Hover-Effekte */
+
+    /* Standard Hintergrundfarbe, wenn keine Variant-Klasse da ist (kann var(--color-primary) sein) */
+    background-color: var(--color-primary); /* Passe dies an den gewünschten Standard an */
+    border-color: var(--color-primary); /* Passender Rahmen */
 }
 
+/* Hover und Active Zustände für Standard Button */
 .btn:hover {
-    background-color: var(--color-primary-dark);
-}
-
-.btn-danger {
-    background-color: var(--color-danger);
-}
-
-.btn-danger:hover {
-    background-color: darken(var(--color-danger), 10%);
-    /* Dunkler beim Hover */
-}
-
-.btn-add {
-    margin-bottom: 1em;
-}
-
-.btn-disabled {
-    color: var(--color-text-light);
-    background-color: var(--color-bg-light);
-    border-color: var(--color-border-light);
-    cursor: not-allowed;
-}
-
-/* -------------------------------------------------------------------------- */
-
-
-.btn-icon {
-    width: 2.5em;
-    height: 2.5em;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-}
-
-.btn-icon i {
-    font-size: 1.2em;
-    /* Größe der Icons */
-}
-
-.btn-danger {
-    background-color: var(--color-danger);
-}
-
-.btn-primary {
-    background-color: var(--color-primary);
-    width: 3em;
-    height: 3em;
-}
-
-/* -------------------------------------------------------------------------- */
-
-
-
-.btn-secondary {
-    /* Falls Sie .btn-secondary später auch für <button> nutzen wollen */
-    padding: 7px 12px;
     color: var(--color-white);
-    border: none;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-    border-radius: 4px;
-    font-size: 14px;
+    background-color: var(--color-primary-dark); /* Dunklere Farbe bei Hover */
+    border-color: var(--color-primary-dark);
+}
+
+.btn:focus, .btn.focus {
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(var(--color-primary-rgb), .5); /* Optional: Fokus Schatten */
+}
+
+.btn:active, .btn.active {
+    color: var(--color-white);
+    background-color: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
+    /* Aktiver Zustand Styling */
+}
+
+/* Sekundärer Button (ist bei dir wohl schon definiert) */
+.btn-secondary {
+    color: var(--color-text); /* Dunklerer Text für sekundär */
+    background-color: var(--color-border); /* Hellerer Hintergrund */
+    border-color: var(--color-border);
 }
 
 .btn-secondary:hover {
-    background-color: #545b62;
-    /* Dunklerer Grauton beim Hover */
+    color: var(--color-text);
+    background-color: var(--color-border-light); /* Noch heller bei Hover */
+    border-color: var(--color-border-light);
 }
 
+/* ... füge hier weitere Zustände für btn-secondary ein, falls nötig ... */
+
+
+/* --- Spezifische Button-Varianten, die in task_view.php verwendet werden --- */
+
+/* Erfolgs-Button (z.B. "Übernehmen") */
+.btn-success {
+    color: var(--color-white);
+    background-color: var(--color-success); /* Nutze deine --color-success Variable */
+    border-color: var(--color-success);
+}
+
+.btn-success:hover {
+    color: var(--color-white);
+    background-color: var(--color-success-dark); /* Definiere eine dunklere Success-Farbe */
+    border-color: var(--color-success-dark);
+}
+/* ... füge hier focus, active Zustände für btn-success ein ... */
+
+
+/* Warn-Button (z.B. "Bearbeiten", "Abbrechen") */
+.btn-warning {
+    color: var(--color-dark-text, #212529); /* Dunkler Text für hellen Hintergrund, oder definiere Variable */
+    background-color: var(--color-warning, #ffc107); /* Nutze deine Variable oder einen Standard */
+    border-color: var(--color-warning, #ffc107);
+}
+
+.btn-warning:hover {
+    color: var(--color-dark-text, #212529);
+    background-color: var(--color-warning-dark, #e0a800); /* Definiere dunklere Warn-Farbe */
+    border-color: var(--color-warning-dark, #e0a800);
+}
+/* ... füge hier focus, active Zustände für btn-warning ein ... */
+
+
+/* Gefahren-Button (z.B. "Löschen") */
+.btn-danger {
+    color: var(--color-white);
+    background-color: var(--color-danger); /* Nutze deine --color-danger Variable */
+    border-color: var(--color-danger);
+}
+
+.btn-danger:hover {
+    color: var(--color-white);
+    background-color: var(--color-danger-dark, #bd2130); /* Definiere dunklere Danger-Farbe */
+    border-color: var(--color-danger-dark, #bd2130);
+}
+/* ... füge hier focus, active Zustände für btn-danger ein ... */
+
+/* Info-Button (z.B. "Details" in der Liste) */
+.btn-info {
+    color: var(--color-white);
+    background-color: var(--color-info, #17a2b8); /* Nutze deine Variable oder einen Standard */
+    border-color: var(--color-info, #17a2b8);
+}
+
+.btn-info:hover {
+    color: var(--color-white);
+    background-color: var(--color-info-dark, #138496); /* Definiere dunklere Info-Farbe */
+    border-color: var(--color-info-dark, #138496);
+}
+/* ... füge hier focus, active Zustände für btn-info ein ... */
+
+
+/* Optional: Kleine Buttons */
+.btn-sm {
+    padding: .25rem .5rem;
+    font-size: .875rem;
+    line-height: 1.5;
+    border-radius: .2rem;
+}
+
+/* Optional: Abstands-Helfer (wenn du Bootstrap Spacing Klassen wie me-2/mr-2 nutzen willst) */
+.me-2 { margin-right: 0.5rem !important; } /* Entspricht typically Bootstrap's Spacing Unit */
+.mb-3 { margin-bottom: 1rem !important; } /* Entspricht typically Bootstrap's Spacing Unit */
+/* Füge hier weitere wie mt-*, ml-*, mx-*, my-*, px-*, py-*, etc. hinzu, falls du sie verwendest */
+
+
+/* Füge auch die Card Styles von vorhin hinzu, wenn du sie noch nicht hast */
+.card-body {
+    flex: 1 1 auto;
+    padding: 1rem 1rem; /* Innerer Abstand der Karte */
+}
+
+.card-title {
+    margin-bottom: 0.75rem; /* Abstand nach dem Titel */
+    font-size: 1.25rem; /* Größe des Titels */
+    font-weight: bold;
+}
+
+.card-text:last-child {
+    margin-bottom: 0; /* Kein unterer Abstand beim letzten Text-Element */
+}
+
+/* Optional: Style für Listen innerhalb von Kartenkörpern */
+.card-body ul {
+    padding-left: 20px; /* Einrückung für Listen */
+    margin-bottom: 1rem;
+}
+
+.card-body ul li {
+    margin-bottom: 0.5rem; /* Abstand zwischen Listenelementen */
+}
 /* -------------------------------------------------------------------------- */
 /* 7.  Checkbox-Listen                                                        */
 /* -------------------------------------------------------------------------- */
@@ -554,7 +630,7 @@ th {
 }
 
 /* -------------------------------------------------------------------------- */
-/* 12. Suchformular                                                          */
+/* 12. Suchformular                                                           */
 /* -------------------------------------------------------------------------- */
 
 .search-form {
@@ -572,7 +648,7 @@ th {
 }
 
 /* -------------------------------------------------------------------------- */
-/* 13. conrols status                                                          */
+/* 13. conrols status                                                         */
 /* -------------------------------------------------------------------------- */
 
 
@@ -640,4 +716,64 @@ th {
     background-color: rgba(208, 224, 239, 0.4) !important; /* Dunkleres, gedämpftes Hellblau, transparent */
 }
 
-/* ... (weitere CSS-Regeln) ... */
+
+
+/* -------------------------------------------------------------------------- */
+/* 14. Tast / Aufgabenverwaltung                                              */
+/* -------------------------------------------------------------------------- */
+
+
+
+/* Beispiel: Styling für die Details-Abschnitte in der Task-View */
+.task-details-section p {
+    margin-bottom: 0.5rem; /* Kleinerer Abstand zwischen den Detailzeilen */
+}
+
+.task-details-section strong {
+    display: inline-block; /* Labels nebeneinander, aber mit fester Breite möglich */
+    width: 150px; /* Beispiel: Feste Breite für Labels */
+    margin-right: 10px; /* Abstand zwischen Label und Wert */
+    /* Oder flexbox/grid nutzen für komplexeres Layout */
+}
+
+/* Beispiel: Farbige Badges für Status (Bootstrap Badges wären auch eine Option) */
+.status-badge {
+    display: inline-block;
+    padding: .3em .6em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: .25rem;
+    color: #fff; /* Standard Textfarbe weiß */
+}
+
+.status-badge.status-open { background-color: #0d6efd; } /* Bootstrap primary blau */
+.status-badge.status-in_progress { background-color: #ffc107; color: #000; } /* Bootstrap warning gelb */
+.status-badge.status-completed { background-color: #28a745; } /* Bootstrap success grün */
+.status-badge.status-cancelled { background-color: #6c757d; } /* Bootstrap secondary grau */
+
+/* Beispiel: Farbige Badges für Priorität */
+.priority-badge {
+     /* Wie status-badge, ggf. andere Größen/Formen */
+     display: inline-block;
+    padding: .3em .6em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: .25rem;
+}
+.priority-badge.priority-low { background-color: #17a2b8; color: #fff;} /* Bootstrap info */
+.priority-badge.priority-medium { background-color: #ffc107; color: #000; } /* Bootstrap warning */
+.priority-badge.priority-high { background-color: #dc3545; color: #fff;} /* Bootstrap danger */
+
+
+/* Beispiel: Abstand bei Listenelementen der Historie oder verknüpften Items */
+.card-body ul li {
+    margin-bottom: 5px; /* Kleiner Abstand zwischen Listenpunkten */
+}

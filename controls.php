@@ -43,7 +43,8 @@ try {
 
 include 'header.php';
 
-function getSortArrow($column_name, $current_sort_column, $current_sort_direction) {
+function getSortArrow($column_name, $current_sort_column, $current_sort_direction)
+{
     if ($column_name === $current_sort_column) {
         return $current_sort_direction === 'ASC' ? ' &#9650;' : ' &#9660;';
     }
@@ -51,7 +52,8 @@ function getSortArrow($column_name, $current_sort_column, $current_sort_directio
 }
 
 // Funktion für alphanumerische Sortierung von Control IDs
-function sortControlIdsAlphaNum($a, $b) {
+function sortControlIdsAlphaNum($a, $b)
+{
     return strnatcmp($a['control_id_iso'], $b['control_id_iso']);
 }
 
@@ -130,8 +132,8 @@ if ($sort_column === 'control_id_iso') {
                             break;
                     }
                     ?>
-                    <tr <?php if (isset($_SESSION['changed_controls'][$control['id']])): ?>class="changed-control"<?php endif; ?>
-                        <?php if (!empty($status_class)): ?>class="<?php echo $status_class; ?>"<?php endif; ?>>
+                    <tr <?php if (isset($_SESSION['changed_controls'][$control['id']])): ?>class="changed-control" <?php endif; ?>
+                        <?php if (!empty($status_class)): ?>class="<?php echo $status_class; ?>" <?php endif; ?>>
                         <td><?php echo he($control['control_id_iso']); ?></td>
                         <td><?php echo he($control['name']); ?></td>
                         <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?php echo he($control['description']); ?>">
@@ -145,8 +147,9 @@ if ($sort_column === 'control_id_iso') {
                         <td><?php echo he(ucfirst($control['implementation_status'])); ?></td>
                         <td><?php echo he(ucfirst($control['priority'])); ?></td>
                         <td>
-                            <a href="control_view.php?id=<?php echo he($control['id']); ?>" class="btn">Details</a>
-                            <a href="control_edit.php?id=<?php echo he($control['id']); ?>" class="btn">Bearbeiten</a>
+                            <a href="control_edit.php?id=<?php echo he($control['id']); ?>" class="btn btn-secondary btn-sm " title="Details ansehen und bearbeiten">
+                                <i class="fas fa-clipboard-list"></i>
+                            </a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -155,6 +158,7 @@ if ($sort_column === 'control_id_iso') {
     </table>
 </div>
 
-<?php unset($_SESSION['changed_controls']); // Markierungen zurücksetzen ?>
+<?php unset($_SESSION['changed_controls']); // Markierungen zurücksetzen 
+?>
 
 <?php include 'footer.php'; ?>

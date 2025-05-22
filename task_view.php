@@ -84,7 +84,6 @@ include 'header.php'; // Dein Header
                 <?php
                 if ($can_reassign_complete && $task['status'] != 'completed' && $task['status'] != 'cancelled'):
                 ?>
-                    <button type="button" class="btn btn-sm btn-secondary me-2" data-bs-toggle="modal" data-bs-target="#reassignModal">Übergeben</button>
 
                      <form action="task_process.php" method="post" style="display:inline;">
                         <input type="hidden" name="action" value="complete">

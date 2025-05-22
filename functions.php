@@ -103,20 +103,25 @@ function calculateRiskLevel($likelihood, $impact) {
 
 function display_flash_messages() {
     // Nutzt he() und die von dir verwendeten Session-Variablen
+    // Ändere die Ausgabe von Bootstrap alert divs zu deinen p Tags mit error/success Klassen
+
     if (isset($_SESSION['flash_success'])) {
-        echo '<div class="alert alert-success">' . he($_SESSION['flash_success']) . '</div>'; // Angepasst für Bootstrap
-        unset($_SESSION['flash_success']); // Nachricht nach Anzeige löschen
+        // Geändertes HTML und Klasse
+        echo '<p class="success">' . he($_SESSION['flash_success']) . '</p>';
+        unset($_SESSION['flash_success']);
     }
     if (isset($_SESSION['flash_error'])) {
-        echo '<div class="alert alert-danger">' . he($_SESSION['flash_error']) . '</div>'; // Angepasst für Bootstrap
+        // Geändertes HTML und Klasse
+        echo '<p class="error">' . he($_SESSION['flash_error']) . '</p>';
         unset($_SESSION['flash_error']);
     }
-     if (isset($_SESSION['flash_info'])) { // Optional: Info Nachrichten hinzufügen
-        echo '<div class="alert alert-info">' . he($_SESSION['flash_info']) . '</div>'; // Angepasst für Bootstrap
+     // Wenn du flash_info oder flash_warning nutzt, musst du hier auch entsprechende divs/p mit Klassen definieren
+     if (isset($_SESSION['flash_info'])) {
+        echo '<p class="info">' . he($_SESSION['flash_info']) . '</p>'; // Füge .info Style in CSS hinzu
         unset($_SESSION['flash_info']);
     }
-     if (isset($_SESSION['flash_warning'])) { // Optional: Warn Nachrichten hinzufügen
-        echo '<div class="alert alert-warning">' . he($_SESSION['flash_warning']) . '</div>'; // Angepasst für Bootstrap
+     if (isset($_SESSION['flash_warning'])) {
+        echo '<p class="warning">' . he($_SESSION['flash_warning']) . '</p>'; // Füge .warning Style in CSS hinzu
         unset($_SESSION['flash_warning']);
     }
 }
